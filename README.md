@@ -1,10 +1,64 @@
-# LaravelEasyAttendance
+# Laravel Easy Attendance — Laravel Attendance Management & ZKTeco Biometric Integration
 
-Drop-in attendance tracking for any Laravel app — check-in/out, correction requests, and ZKTeco biometric device sync (pull *and* push/ADMS) work against your existing `User` model out of the box, or any model you choose. Optionally, a full HR core layered on top: employees, shifts, schedules, holidays, leave, present/late/absent/holiday summaries, and salary generation — including overtime pay and special-working-day pay.
+[![Latest Stable Version](https://img.shields.io/packagist/v/easybdit/laraveleasyattendance.svg)](https://packagist.org/packages/easybdit/laraveleasyattendance)
+[![Total Downloads](https://img.shields.io/packagist/dt/easybdit/laraveleasyattendance.svg)](https://packagist.org/packages/easybdit/laraveleasyattendance)
+[![PHP Version](https://img.shields.io/badge/PHP-8.2%2B-777BB4.svg)](https://www.php.net/)
+[![Laravel](https://img.shields.io/badge/Laravel-11%20%7C%2012%20%7C%2013-FF2D20.svg)](https://laravel.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+A complete **Laravel attendance management package** for employee check-in and check-out, biometric attendance, ZKTeco device synchronization, shifts, leave management, holidays, overtime, attendance reports, salary generation, and payroll workflows. Built for modern Laravel applications that need a flexible employee attendance and HR solution.
+
+Built for **Laravel 11, Laravel 12, and Laravel 13** with **PHP 8.2+**, Laravel Easy Attendance provides a flexible attendance system that can work with your existing `User` model or its built-in Employee model.
+
+It supports both **ZKTeco Pull mode and Push/ADMS mode**, making it suitable for offices, schools, factories, corporate HR systems, ERP applications, and other employee attendance environments.
 
 Extracted and redesigned from a production HR system's attendance module, and validated end-to-end against real ZKTeco hardware (see [Tested against real devices](#tested-against-real-devices)).
 
 ## Contents
+
+## Why Laravel Easy Attendance?
+
+Laravel Easy Attendance is designed as a reusable attendance and HR package for Laravel applications. It covers the complete flow from raw check-in/check-out punches to daily attendance summaries, leave, overtime, special working days, and salary generation.
+
+### Key features
+
+- Employee check-in and check-out tracking
+- Laravel attendance management with reusable Eloquent models and traits
+- Biometric attendance integration with ZKTeco devices
+- ZKTeco Pull mode over IP
+- ZKTeco Push / ADMS synchronization
+- Attendance correction requests and approval workflow
+- Shift and employee schedule management
+- Leave and holiday management
+- Daily attendance summaries: present, late, absent, leave, holiday, and day off
+- Overtime detection, approval, and salary calculation
+- Special working-day pay
+- Salary slip generation from attendance data
+- Attendance and salary reports
+- Laravel events for attendance, correction, leave, overtime, and device-sync workflows
+- Configurable feature flags so you can enable only the modules you need
+- Polymorphic attendance subjects for `User`, `Employee`, `Staff`, or another model
+
+### Use cases
+
+Laravel Easy Attendance can be used for:
+
+- Employee attendance systems
+- HR and payroll applications
+- School and college staff attendance
+- Office attendance management
+- Factory and industrial workforce tracking
+- Corporate ERP systems
+- Biometric attendance systems
+- ZKTeco attendance integrations
+- Multi-purpose Laravel business applications
+
+### Requirements
+
+- PHP 8.2 or higher
+- Laravel 11, 12, or 13
+- MySQL, MariaDB, SQLite, or another supported Laravel database driver
+
 
 - [Install](#install)
 - [Quick start](#quick-start)
@@ -12,11 +66,11 @@ Extracted and redesigned from a production HR system's attendance module, and va
 - [How a punch is resolved](#how-a-punch-is-resolved)
 - [Corrections](#corrections)
 - [Events](#events)
-- [ZKTeco device sync](#zkteco-device-sync)
+- [ZKTeco Biometric Attendance & Device Sync](#zkteco-biometric-attendance--device-sync)
   - [Mode A — Pull](#mode-a--pull-server-connects-out-to-the-device)
   - [Mode B — Push/ADMS](#mode-b--push--adms-the-device-connects-to-you)
   - [Viewing synced data](#viewing-synced-data)
-- [HR core: shifts, leave, holidays, summaries, salary](#hr-core-shifts-leave-holidays-summaries-salary)
+- [HR & Payroll Core: Shifts, Leave, Holidays, Attendance Summaries, Overtime & Salary](#hr--payroll-core-shifts-leave-holidays-attendance-summaries-overtime--salary)
   - [Full worked example](#full-worked-example)
   - [Overtime + special working day, worked example](#overtime--special-working-day-worked-example)
 - [Configuration reference](#configuration-reference)
@@ -24,6 +78,8 @@ Extracted and redesigned from a production HR system's attendance module, and va
 - [Tested against real devices](#tested-against-real-devices)
 - [Testing](#testing)
 - [Roadmap](#roadmap)
+- [Frequently Asked Questions](#frequently-asked-questions)
+- [Keywords](#keywords)
 
 ## Install
 
@@ -111,7 +167,7 @@ Corrections are optional (`config('attendance.features.corrections')`) and route
 
 The package has no opinion on notifications — listen for these and send however your app already does.
 
-## ZKTeco device sync
+## ZKTeco Biometric Attendance & Device Sync
 
 The one rule that matters for both modes below: **nothing shows up in `attendances` until a sync actually runs.** Adding a device just registers it — it does not fetch anything by itself. Pull mode fetches only when you call `pull` (or the scheduled command runs); push mode only stores data once the physical device actually calls your server. Always: **connect/register → sync → then query the data** — never the other way round.
 
@@ -202,7 +258,7 @@ $device->attendances()->latest('time')->first();            // most recent punch
 
 Both sync modes funnel through one shared `AttendanceDeviceSyncService::ingestLogs()`, so a punch is handled identically no matter which direction it arrived from — same matching, same dedup, same `AttendanceRecorded` event.
 
-## HR core: shifts, leave, holidays, summaries, salary
+## HR & Payroll Core: Shifts, Leave, Holidays, Attendance Summaries, Overtime & Salary
 
 Everything above works against *any* subject model with just a punch log. This layer is different — it's built around the package's own **`Employee`** model (salary, allowances, a device PIN) because computing "present vs. late vs. absent" and generating a payslip genuinely needs real employee data, not an arbitrary model. Off by default; turn the whole stack on with one var:
 
@@ -454,8 +510,34 @@ DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=your_test_db DB_USERNAME=... D
 
 ## Roadmap
 
-- Packagist publish.
+- Maintain releases and improve compatibility across supported Laravel versions.
 - A pluggable `ShiftResolver`/leave/holiday *contract* for teams who want summaries against their own existing shift/roster system instead of this package's `Shift`/`EmployeeShift`.
+
+## Frequently Asked Questions
+
+### Is this a Laravel attendance package?
+
+Yes. Laravel Easy Attendance provides employee check-in/check-out, attendance logs, daily summaries, corrections, shifts, leave, overtime, salary generation, and attendance reports for Laravel applications.
+
+### Does it support ZKTeco biometric devices?
+
+Yes. The package supports both ZKTeco Pull mode and ZKTeco Push / ADMS mode. Pull mode connects from the Laravel server to the device, while Push / ADMS allows the device to send attendance data to the Laravel application.
+
+### Can I use my existing User model?
+
+Yes. The attendance system uses a polymorphic `subject` relation, so you can attach attendance to your existing `User`, `Employee`, `Staff`, or another model.
+
+### Does it include HR and payroll features?
+
+The optional HR core includes employees, shifts, schedules, holidays, leave, attendance summaries, overtime, special working-day pay, and salary-slip generation.
+
+### Which Laravel versions are supported?
+
+The package is designed for Laravel 11, Laravel 12, and Laravel 13 and requires PHP 8.2 or higher.
+
+## Keywords
+
+Laravel attendance, Laravel attendance package, Laravel attendance management, employee attendance, employee attendance system, biometric attendance, ZKTeco attendance, ZKTeco Laravel integration, ZKTeco ADMS, biometric attendance system, attendance management system, HR management, leave management, shift management, overtime management, payroll, salary management, attendance reports, Laravel HR package.
 
 ## License
 
