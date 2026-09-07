@@ -4,6 +4,12 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Planned
+- Packagist publish
+- A pluggable shift/leave/holiday contract for teams who want summaries against their own existing roster system instead of this package's `Shift`/`EmployeeShift`
+
+## [0.3.0] - 2026-09-07
+
 ### Added
 - Automated test suite (PHPUnit + Orchestra Testbench). Runs against sqlite in-memory by default, overridable via env vars for any other driver — see the README's Testing section.
 - **HR core**, optional (`ATTENDANCE_FEATURE_HR_CORE=true` for all of it, or toggle each piece individually):
@@ -12,19 +18,18 @@ All notable changes to this project are documented here. Format follows [Keep a 
   - `Holiday`, including recurring-yearly (same month/day, any year)
   - `Leave` (+ `LeaveType`) — request/approve/reject, same pattern as attendance corrections; an approved leave outranks even a stray punch
   - `AttendanceSummaryService` — daily present/late/absent/leave/holiday/day_off computation from the punch log + shift + leave + holiday, priority-ordered; `attendance:build-summaries` command
-  - `SalaryService` — generates a `SalarySlip` from a month's summaries (rebuilding them first); simple override-able deduction rule (absent days + every Nth late day dock a per-day rate); `attendance:generate-salary` command
+  - `SalaryService` — generates a `SalarySlip` from a month's summaries (rebuilding them first); absent days + every Nth late day (default 3) each dock one per-day rate — the common "3 late = 1 absent" office policy; `attendance:generate-salary` command
   - `AttendanceReportController` — read-only JSON reports: daily, monthly grid, employee-wise range, salary
-  - Events: `LeaveRequested`, `LeaveReviewed`, `AttendanceMarkedLate`
-- Test suite grew to 28 tests / 75 assertions covering all of the above (summary status priority, late-minute math, recurring holidays, leave overriding a punch, salary deduction arithmetic) alongside the existing core/device-sync coverage.
+  - **Overtime**: auto-detected from each day's summary (`ot_minutes`) as a `pending` `OvertimeRecord` — only reaches a payslip once `approve()`d, so a punch-clock quirk can't quietly inflate pay. Rate = `basic_salary / (salary_divisor × 8) × rate_multiplier` (BD Labour Act convention this package was first built under), capped at `max_hours_per_day`. Rebuilding a summary never reopens an already-reviewed record.
+  - **Special working days**: extra pay for an employee asked to work a day normally off (their shift's off day, or a `Holiday`) — `type` auto-detected from the date against that employee's own shift, payment defaults from config (`daily_rate` / `fixed_amount` / `multiplier`) or a custom `payment_amount`, and only pays if the employee actually punched in that day.
+  - Events: `LeaveRequested`, `LeaveReviewed`, `AttendanceMarkedLate`, `OvertimeReviewed`
+- Test suite: 39 tests / 94 assertions — summary status priority, late-minute math, recurring holidays, leave overriding a punch, the late-ratio deduction boundary (2 vs. 3 late days), OT capped-and-approval-gated, special-day type detection, and pay withheld unless the employee showed up.
 
 ### Docs
-- README's new HR core section includes a "Full worked example" — all eight pieces (employee → shift → schedule → holiday → leave → punches → summaries → salary) together in one real, runnable script with the actual output alongside it, not just isolated per-feature snippets.
+- README's new HR core section includes two full worked examples (core HR flow, and overtime + special working day) — real, runnable scripts with the actual output alongside them, not just isolated per-feature snippets.
 
 ### Fixed
 - `Holiday::on()` collided with `Eloquent\Model`'s own static `on($connection)` — incompatible signature, fatal error on any use. Renamed to `Holiday::onDate()`.
-
-### Planned
-- Packagist publish
 - A pluggable shift/leave/holiday contract for teams who want summaries against their own existing roster system instead of this package's `Shift`/`EmployeeShift`
 
 ## [0.2.1] - 2026-09-07

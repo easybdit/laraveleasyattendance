@@ -56,6 +56,8 @@ return [
         'holidays'  => env('ATTENDANCE_FEATURE_HOLIDAYS', env('ATTENDANCE_FEATURE_HR_CORE', false)),
         'leave'     => env('ATTENDANCE_FEATURE_LEAVE', env('ATTENDANCE_FEATURE_HR_CORE', false)),
         'salary'    => env('ATTENDANCE_FEATURE_SALARY', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'overtime'  => env('ATTENDANCE_FEATURE_OVERTIME', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'special_working_days' => env('ATTENDANCE_FEATURE_SPECIAL_WORKING_DAYS', env('ATTENDANCE_FEATURE_HR_CORE', false)),
     ],
 
     /*
@@ -121,6 +123,52 @@ return [
         'late_deduction_ratio' => env('ATTENDANCE_SALARY_LATE_RATIO', 3), // every 3rd late day = 1 absent
         'deduct_for_absent' => true,
         'deduct_for_late' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Overtime
+    |--------------------------------------------------------------------------
+    |
+    | Only active when features.overtime is true. Auto-detected from each
+    | day's summary (AttendanceSummary::ot_minutes — last_out past the
+    | shift's end_time), but lands as a 'pending' OvertimeRecord: OT pay
+    | only reaches a salary slip once approved, so a punch-clock mistake
+    | (or someone lingering after hours for no work reason) can't quietly
+    | inflate pay. Rate formula mirrors the BD Labour Act convention this
+    | package was first built under: hourly_rate = basic / (divisor × 8);
+    | OT pays double that. Adjust divisor/multiplier for your own rules.
+    |
+    */
+    'overtime' => [
+        'auto_detect' => env('ATTENDANCE_OT_AUTO_DETECT', true),
+        'salary_divisor' => env('ATTENDANCE_OT_SALARY_DIVISOR', 26), // basic / (divisor × 8) = hourly rate
+        'rate_multiplier' => env('ATTENDANCE_OT_RATE_MULTIPLIER', 2), // OT pays this × the hourly rate
+        'max_hours_per_day' => env('ATTENDANCE_OT_MAX_HOURS_PER_DAY', 2),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Special working days
+    |--------------------------------------------------------------------------
+    |
+    | Only active when features.special_working_days is true. For when an
+    | employee is specifically asked to work a day off (their shift's
+    | off_day) or a holiday — SpecialWorkingDay::save() auto-detects which
+    | based on that date, and its extra payment (on top of ordinary salary)
+    | is controlled by these config values unless a custom payment_amount
+    | is set on the record itself.
+    |
+    */
+    'special_working_days' => [
+        // 'daily_rate' | 'fixed_amount' | 'multiplier'
+        'day_off_payment_type' => env('ATTENDANCE_SPECIAL_DAY_OFF_PAYMENT_TYPE', 'daily_rate'),
+        'day_off_fixed_amount' => env('ATTENDANCE_SPECIAL_DAY_OFF_FIXED_AMOUNT', 1000),
+        'day_off_multiplier' => env('ATTENDANCE_SPECIAL_DAY_OFF_MULTIPLIER', 1.0),
+
+        'holiday_payment_type' => env('ATTENDANCE_SPECIAL_HOLIDAY_PAYMENT_TYPE', 'daily_rate'),
+        'holiday_fixed_amount' => env('ATTENDANCE_SPECIAL_HOLIDAY_FIXED_AMOUNT', 1000),
+        'holiday_multiplier' => env('ATTENDANCE_SPECIAL_HOLIDAY_MULTIPLIER', 1.0),
     ],
 
 ];

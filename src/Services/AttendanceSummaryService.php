@@ -10,6 +10,7 @@ use Easybdit\LaravelEasyAttendance\Models\AttendanceSummary;
 use Easybdit\LaravelEasyAttendance\Models\Employee;
 use Easybdit\LaravelEasyAttendance\Models\Holiday;
 use Easybdit\LaravelEasyAttendance\Models\Leave;
+use Easybdit\LaravelEasyAttendance\Models\OvertimeRecord;
 use Easybdit\LaravelEasyAttendance\Support\ShiftResolver;
 
 /**
@@ -98,6 +99,10 @@ class AttendanceSummaryService
 
         if ($status === 'late' && ! $wasAlreadyLate) {
             event(new AttendanceMarkedLate($employee, $date, $lateMinutes));
+        }
+
+        if (config('attendance.features.overtime', false) && config('attendance.overtime.auto_detect', true)) {
+            OvertimeRecord::detectFromSummary($employee, $summary);
         }
 
         return $summary;

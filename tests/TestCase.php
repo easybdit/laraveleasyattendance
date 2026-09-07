@@ -66,5 +66,7 @@ abstract class TestCase extends Orchestra
         $app['config']->set('attendance.features.leave', true);
         $app['config']->set('attendance.features.summaries', true);
         $app['config']->set('attendance.features.salary', true);
+        $app['config']->set('attendance.features.overtime', true);
+        $app['config']->set('attendance.features.special_working_days', true);
     }
 }

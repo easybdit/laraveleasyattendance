@@ -1,6 +1,6 @@
 # LaravelEasyAttendance
 
-Drop-in attendance tracking for any Laravel app — check-in/out, correction requests, and ZKTeco biometric device sync (pull *and* push/ADMS) work against your existing `User` model out of the box, or any model you choose. Optionally, a full HR core layered on top: employees, shifts, schedules, holidays, leave, present/late/absent/holiday summaries, and salary generation.
+Drop-in attendance tracking for any Laravel app — check-in/out, correction requests, and ZKTeco biometric device sync (pull *and* push/ADMS) work against your existing `User` model out of the box, or any model you choose. Optionally, a full HR core layered on top: employees, shifts, schedules, holidays, leave, present/late/absent/holiday summaries, and salary generation — including overtime pay and special-working-day pay.
 
 Extracted and redesigned from a production HR system's attendance module, and validated end-to-end against real ZKTeco hardware (see [Tested against real devices](#tested-against-real-devices)).
 
@@ -18,6 +18,7 @@ Extracted and redesigned from a production HR system's attendance module, and va
   - [Viewing synced data](#viewing-synced-data)
 - [HR core: shifts, leave, holidays, summaries, salary](#hr-core-shifts-leave-holidays-summaries-salary)
   - [Full worked example](#full-worked-example)
+  - [Overtime + special working day, worked example](#overtime--special-working-day-worked-example)
 - [Configuration reference](#configuration-reference)
 - [Routes reference](#routes-reference)
 - [Tested against real devices](#tested-against-real-devices)
@@ -105,6 +106,7 @@ Corrections are optional (`config('attendance.features.corrections')`) and route
 | `AttendanceDeviceSyncFailed` | A device fails to sync, escalating (Nth failure, then every Mth after — see config) |
 | `LeaveRequested` | An employee submits a leave request |
 | `LeaveReviewed` | A leave request is approved or rejected (`$leave->status` tells which) |
+| `OvertimeReviewed` | An overtime record is approved or rejected — only `approved` reaches a salary slip |
 | `AttendanceMarkedLate` | A day's summary (re)builds as `late` and wasn't already — a rebuild of an already-late day doesn't re-fire this |
 
 The package has no opinion on notifications — listen for these and send however your app already does.
@@ -210,11 +212,11 @@ ATTENDANCE_FEATURE_HR_CORE=true
 ```bash
 php artisan migrate
 ```
-(Each piece — `employees`, `shifts`, `holidays`, `leave`, `summaries`, `salary` — is also an individually toggleable `ATTENDANCE_FEATURE_*` flag, in case you only want some of them.)
+(Each piece — `employees`, `shifts`, `holidays`, `leave`, `summaries`, `salary`, `overtime`, `special_working_days` — is also an individually toggleable `ATTENDANCE_FEATURE_*` flag, in case you only want some of them.)
 
 Every class below is under `Easybdit\LaravelEasyAttendance\`:
 ```php
-use Easybdit\LaravelEasyAttendance\Models\{Employee, Shift, EmployeeShift, Holiday, LeaveType, Leave};
+use Easybdit\LaravelEasyAttendance\Models\{Employee, Shift, EmployeeShift, Holiday, LeaveType, Leave, OvertimeRecord, SpecialWorkingDay};
 use Easybdit\LaravelEasyAttendance\Services\{AttendanceSummaryService, SalaryService};
 ```
 
@@ -264,14 +266,27 @@ use Easybdit\LaravelEasyAttendance\Services\{AttendanceSummaryService, SalarySer
    ```
    Priority order per day: **leave → holiday → day off → absent (no punch) → late/present** (from the shift-vs-first-punch comparison). Run `attendance:build-summaries` after every device sync (or schedule it) so summaries stay current.
 
-7. **Salary** — generated *from* that month's summaries (rebuilds them first, so a slip always reflects the latest synced attendance):
+7. **Overtime** — auto-detected from each day's summary (`ot_minutes`: last-out past the shift's end time), but lands as a **`pending`** `OvertimeRecord` — it only reaches a payslip once approved, so a punch-clock quirk can't quietly inflate pay:
+   ```php
+   $ot = OvertimeRecord::where('employee_id', $employee->id)->where('date', '2026-10-08')->first();
+   $ot->approve($reviewerId, 'confirmed with supervisor'); // or ->reject(...)
+   ```
+   Rate follows the BD Labour Act convention this package was first built under — `hourly_rate = basic_salary / (salary_divisor × 8)`, OT pays `rate_multiplier ×` that, capped at `max_hours_per_day` (`config('attendance.overtime')`, all adjustable). Rebuilding a summary never reopens a record someone already approved/rejected — only an untouched auto/pending row gets updated.
+
+8. **Special working days** — an employee specifically asked to work a day that's normally off (their shift's off day, or a company `Holiday`) gets *extra* pay for it, on top of ordinary salary, instead of that day just quietly counting as a plain "present":
+   ```php
+   SpecialWorkingDay::create(['employee_id' => $employee->id, 'date' => '2026-10-09', 'is_payable' => true]);
+   ```
+   `type` (`day_off` / `holiday` / `other`) is auto-detected from the date itself against that employee's own shift — not chosen by hand, so it can't drift out of sync. Payment defaults to a plain day's rate (`config('attendance.special_working_days')` — `daily_rate` / `fixed_amount` / `multiplier`, per type), or set a custom `payment_amount` on the record to override it. **Only pays if the employee actually punched in that day** — marking a date special doesn't create attendance, it just adds pay to attendance that already happened.
+
+9. **Salary** — generated *from* that month's summaries (rebuilds them first, so a slip always reflects the latest synced attendance) — includes approved overtime and payable special-working-day pay automatically:
    ```bash
    php artisan attendance:generate-salary 2026 9              # every active employee
    php artisan attendance:generate-salary 2026 9 --employee=5 # just one
    ```
-   Default rule (override by reading `SalaryService` — this is a starting point, not a full payroll engine): each absent day docks one `basic_salary / working_days_per_month`; every Nth late day docks one more (`config('attendance.salary')`). `net_salary = basic_salary + allowances - deductions`, snapshotted onto the `SalarySlip` so a later raise never reshapes an already-generated one.
+   Default rule (override by reading `SalaryService` — this is a starting point, not a full payroll engine): each absent day docks one `basic_salary / working_days_per_month`; **every Nth late day docks one more — the common "3 late = 1 absent" office policy** (`config('attendance.salary.late_deduction_ratio')`, default `3`). `net_salary = basic_salary + allowances - deductions + overtime_amount + special_pay_amount`, snapshotted onto the `SalarySlip` so a later raise never reshapes an already-generated one.
 
-8. **Reports** — read-only JSON over the summary/salary tables (presentation is up to your own app/GUI):
+10. **Reports** — read-only JSON over the summary/salary tables (presentation is up to your own app/GUI):
    ```
    GET /attendance/reports/daily?date=2026-09-07
    GET /attendance/reports/monthly?year=2026&month=9
@@ -281,7 +296,7 @@ use Easybdit\LaravelEasyAttendance\Services\{AttendanceSummaryService, SalarySer
 
 ### Full worked example
 
-All eight pieces together, one employee, one week — this is a real `tinker` run, output included, so you can see exactly what each step produces:
+All eight pieces together, one employee, one week — this is a real `tinker` run, output included, so you can see exactly what each step produces. (Overtime + special working days are a second, separate run below, on their own employee/month, so the numbers stay easy to follow.)
 
 ```php
 $employee = Employee::create([
@@ -326,6 +341,45 @@ $slip = (new SalaryService)->generate($employee, 2026, 9);
 // unpunched day of September as absent/day_off, not just the 7 days above)
 ```
 
+### Overtime + special working day, worked example
+
+Same shift setup, a different employee, basic 26000 (per-day rate = 26000/30 ≈ 866.67):
+
+```php
+// 3 late days in October — the late-ratio deduction (config default: every 3rd = 1 absent) kicks in.
+foreach (['2026-10-05', '2026-10-06', '2026-10-07'] as $d) {
+    $employee->checkIn(['time' => $d.' 09:45:00']);
+    $employee->checkOut(['time' => $d.' 17:00:00']);
+}
+
+// Worked till 19:30 on the 8th — 2.5h past the 17:00 shift end.
+$employee->checkIn(['time' => '2026-10-08 09:00:00']);
+$employee->checkOut(['time' => '2026-10-08 19:30:00']);
+
+// Asked to work Friday the 9th (the shift's off_day) — and did.
+$employee->checkIn(['time' => '2026-10-09 09:00:00']);
+$employee->checkOut(['time' => '2026-10-09 17:00:00']);
+$special = SpecialWorkingDay::create(['employee_id' => $employee->id, 'date' => '2026-10-09', 'is_payable' => true]);
+// $special->type === 'day_off' — auto-detected
+
+foreach (['2026-10-05','2026-10-06','2026-10-07','2026-10-08','2026-10-09'] as $d) {
+    (new AttendanceSummaryService)->buildOne($employee, $d);
+}
+
+$ot = OvertimeRecord::where('employee_id', $employee->id)->where('date', '2026-10-08')->first();
+// status=pending  ot_hours=2.00 (capped from 2.5)  ot_rate=250.0000  ot_amount=500.00
+$ot->approve();
+
+$slip = (new SalaryService)->generate($employee, 2026, 10);
+```
+```
+present=5  absent=22  late=3
+basic=26000.00  deduction=19933.33   (23 days × 866.67 — 22 absent + 1 from 3 late ÷ 3)
+overtime_hours=2.00  overtime_amount=500.00
+special_pay_amount=866.67            (one day's rate, for showing up on an off day)
+net_salary=7433.34                   (26000 − 19933.33 + 500 + 866.67)
+```
+
 ## Configuration reference
 
 `config/attendance.php`, after `php artisan vendor:publish --tag=attendance-config`:
@@ -339,7 +393,7 @@ $slip = (new SalaryService)->generate($employee, 2026, 9);
 | `routes.review_middleware` | `['web','auth']` | Extra gate on correction/device management routes — point at your own admin `can:` |
 | `features.corrections` | `true` | Correction request/approve/reject |
 | `features.device_sync` | `false` | ZKTeco pull + push/ADMS |
-| `features.employees` / `shifts` / `holidays` / `leave` / `summaries` / `salary` | `false` | HR core, each individually toggleable — or set `ATTENDANCE_FEATURE_HR_CORE=true` to flip all six at once |
+| `features.employees` / `shifts` / `holidays` / `leave` / `summaries` / `salary` / `overtime` / `special_working_days` | `false` | HR core, each individually toggleable — or set `ATTENDANCE_FEATURE_HR_CORE=true` to flip all eight at once |
 | `device_sync.pin_column` | `device_user_id` | Column on the subject model's table holding the device PIN |
 | `device_sync.online_threshold_seconds` | `90` | How recently a push device must have been seen to count "online" |
 | `device_sync.notify_after_failures` / `notify_every` | `2` / `5` | `AttendanceDeviceSyncFailed` escalation schedule |
@@ -347,6 +401,11 @@ $slip = (new SalaryService)->generate($employee, 2026, 9);
 | `salary.working_days_per_month` | `30` | Divides `basic_salary` into a per-day rate for deductions |
 | `salary.late_deduction_ratio` | `3` | Every Nth late day docks one more day's pay |
 | `salary.deduct_for_absent` / `deduct_for_late` | `true` / `true` | Turn either deduction rule off |
+| `overtime.salary_divisor` / `rate_multiplier` | `26` / `2` | OT hourly rate = `basic_salary / (divisor × 8)`, paid at `multiplier ×` that |
+| `overtime.max_hours_per_day` | `2` | Caps auto-detected OT per day, however late the last punch |
+| `overtime.auto_detect` | `true` | Auto-create a pending `OvertimeRecord` whenever a summary has `ot_minutes` |
+| `special_working_days.day_off_payment_type` / `holiday_payment_type` | `daily_rate` | `daily_rate` \| `fixed_amount` \| `multiplier`, per special-day type |
+| `special_working_days.*_fixed_amount` / `*_multiplier` | `1000` / `1.0` | Used when the payment type above is `fixed_amount` / `multiplier` |
 
 ## Routes reference
 
@@ -385,7 +444,7 @@ Runs against sqlite in-memory by default (Orchestra Testbench). To run against a
 DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=your_test_db DB_USERNAME=... DB_PASSWORD=... composer test
 ```
 
-28 tests / 75 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the HTTP routes, and the full HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch, and salary deduction arithmetic.
+39 tests / 94 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the HTTP routes, the HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch — and overtime/special-working-day pay: the late-ratio deduction boundary (2 vs. 3 late days), OT capped at `max_hours_per_day` and only paid once approved (a rebuild can't reopen an already-reviewed record), special-day type auto-detection, and pay withheld unless the employee actually showed up.
 
 ## Roadmap
 

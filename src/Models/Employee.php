@@ -48,6 +48,16 @@ class Employee extends Model
         return $this->hasMany(AttendanceSummary::class);
     }
 
+    public function overtimeRecords()
+    {
+        return $this->hasMany(OvertimeRecord::class);
+    }
+
+    public function specialWorkingDays()
+    {
+        return $this->hasMany(SpecialWorkingDay::class);
+    }
+
     public function totalAllowances(): float
     {
         return array_sum($this->allowances ?? []);
