@@ -1,6 +1,6 @@
 # LaravelEasyAttendance
 
-Drop-in attendance tracking — check-in/out, correction requests, and ZKTeco biometric device sync (pull *and* push/ADMS) — for any Laravel app. Works against your existing `User` model out of the box, or any model you choose.
+Drop-in attendance tracking for any Laravel app — check-in/out, correction requests, and ZKTeco biometric device sync (pull *and* push/ADMS) work against your existing `User` model out of the box, or any model you choose. Optionally, a full HR core layered on top: employees, shifts, schedules, holidays, leave, present/late/absent/holiday summaries, and salary generation.
 
 Extracted and redesigned from a production HR system's attendance module, and validated end-to-end against real ZKTeco hardware (see [Tested against real devices](#tested-against-real-devices)).
 
@@ -16,6 +16,7 @@ Extracted and redesigned from a production HR system's attendance module, and va
   - [Mode A — Pull](#mode-a--pull-server-connects-out-to-the-device)
   - [Mode B — Push/ADMS](#mode-b--push--adms-the-device-connects-to-you)
   - [Viewing synced data](#viewing-synced-data)
+- [HR core: shifts, leave, holidays, summaries, salary](#hr-core-shifts-leave-holidays-summaries-salary)
 - [Configuration reference](#configuration-reference)
 - [Routes reference](#routes-reference)
 - [Tested against real devices](#tested-against-real-devices)
@@ -101,6 +102,9 @@ Corrections are optional (`config('attendance.features.corrections')`) and route
 | `AttendanceCorrectionRequested` | A subject submits a correction |
 | `AttendanceCorrectionReviewed` | A correction is approved or rejected (`$correction->status` tells which) |
 | `AttendanceDeviceSyncFailed` | A device fails to sync, escalating (Nth failure, then every Mth after — see config) |
+| `LeaveRequested` | An employee submits a leave request |
+| `LeaveReviewed` | A leave request is approved or rejected (`$leave->status` tells which) |
+| `AttendanceMarkedLate` | A day's summary (re)builds as `late` and wasn't already — a rebuild of an already-late day doesn't re-fire this |
 
 The package has no opinion on notifications — listen for these and send however your app already does.
 
@@ -195,6 +199,79 @@ $device->attendances()->latest('time')->first();            // most recent punch
 
 Both sync modes funnel through one shared `AttendanceDeviceSyncService::ingestLogs()`, so a punch is handled identically no matter which direction it arrived from — same matching, same dedup, same `AttendanceRecorded` event.
 
+## HR core: shifts, leave, holidays, summaries, salary
+
+Everything above works against *any* subject model with just a punch log. This layer is different — it's built around the package's own **`Employee`** model (salary, allowances, a device PIN) because computing "present vs. late vs. absent" and generating a payslip genuinely needs real employee data, not an arbitrary model. Off by default; turn the whole stack on with one var:
+
+```
+ATTENDANCE_FEATURE_HR_CORE=true
+```
+```bash
+php artisan migrate
+```
+(Each piece — `employees`, `shifts`, `holidays`, `leave`, `summaries`, `salary` — is also an individually toggleable `ATTENDANCE_FEATURE_*` flag, in case you only want some of them.)
+
+**The pieces, in the order you'll normally set them up:**
+
+1. **Employee** — the subject everything else attaches to.
+   ```php
+   $employee = Employee::create([
+       'employee_code' => 'E-100', 'name' => 'Nusrat Jahan',
+       'device_user_id' => '9001', // matches device sync's pin_column
+       'basic_salary' => 30000, 'allowances' => ['house_rent' => 5000, 'medical' => 1000],
+       'status' => 'active',
+   ]);
+   ```
+   `Employee` itself uses `HasAttendance`, so `$employee->checkIn()`, `->checkOut()`, device sync — everything from the sections above — works on it directly.
+
+2. **Shift** — working hours + late grace + off days.
+   ```php
+   $shift = Shift::create(['name' => 'General', 'start_time' => '09:00', 'end_time' => '17:00', 'late_grace_minutes' => 10, 'off_days' => ['Friday']]);
+   ```
+
+3. **Schedule** (`EmployeeShift`) — assign a shift to an employee for a date range (open-ended `end_date` = still current):
+   ```php
+   EmployeeShift::create(['employee_id' => $employee->id, 'shift_id' => $shift->id, 'start_date' => '2026-08-01']);
+   ```
+   No assignment covering a date? `ShiftResolver` falls back to `config('attendance.default_shift')` — summaries work from day one, before you've set up a single shift.
+
+4. **Holiday** — a date nobody's expected to work, with no punch needed to explain the day.
+   ```php
+   Holiday::create(['name' => 'Independence Day', 'date' => '2026-03-26', 'is_recurring_yearly' => true]);
+   ```
+
+5. **Leave** — request → approve/reject, same pattern as attendance corrections:
+   ```php
+   $leave = $employee->requestLeave(['start_date' => '2026-09-03', 'end_date' => '2026-09-03', 'reason' => 'personal']);
+   $leave->approve($reviewerId); // or ->reject(...)
+   ```
+   An approved leave outranks everything else for that date — even a stray punch.
+
+6. **Attendance summary** — the actual present/late/absent/leave/holiday/day_off computation, one row per employee per day:
+   ```bash
+   php artisan attendance:build-summaries 2026-09-07   # one date, every active employee
+   ```
+   ```php
+   (new AttendanceSummaryService)->buildOne($employee, '2026-09-07');
+   (new AttendanceSummaryService)->buildForMonth($employee, 2026, 9);
+   ```
+   Priority order per day: **leave → holiday → day off → absent (no punch) → late/present** (from the shift-vs-first-punch comparison). Run `attendance:build-summaries` after every device sync (or schedule it) so summaries stay current.
+
+7. **Salary** — generated *from* that month's summaries (rebuilds them first, so a slip always reflects the latest synced attendance):
+   ```bash
+   php artisan attendance:generate-salary 2026 9              # every active employee
+   php artisan attendance:generate-salary 2026 9 --employee=5 # just one
+   ```
+   Default rule (override by reading `SalaryService` — this is a starting point, not a full payroll engine): each absent day docks one `basic_salary / working_days_per_month`; every Nth late day docks one more (`config('attendance.salary')`). `net_salary = basic_salary + allowances - deductions`, snapshotted onto the `SalarySlip` so a later raise never reshapes an already-generated one.
+
+8. **Reports** — read-only JSON over the summary/salary tables (presentation is up to your own app/GUI):
+   ```
+   GET /attendance/reports/daily?date=2026-09-07
+   GET /attendance/reports/monthly?year=2026&month=9
+   GET /attendance/reports/employee/{employee}?from=2026-09-01&to=2026-09-07
+   GET /attendance/reports/salary?year=2026&month=9
+   ```
+
 ## Configuration reference
 
 `config/attendance.php`, after `php artisan vendor:publish --tag=attendance-config`:
@@ -208,10 +285,14 @@ Both sync modes funnel through one shared `AttendanceDeviceSyncService::ingestLo
 | `routes.review_middleware` | `['web','auth']` | Extra gate on correction/device management routes — point at your own admin `can:` |
 | `features.corrections` | `true` | Correction request/approve/reject |
 | `features.device_sync` | `false` | ZKTeco pull + push/ADMS |
-| `features.summaries` | `false` | Reserved — Tier 2, not yet implemented |
+| `features.employees` / `shifts` / `holidays` / `leave` / `summaries` / `salary` | `false` | HR core, each individually toggleable — or set `ATTENDANCE_FEATURE_HR_CORE=true` to flip all six at once |
 | `device_sync.pin_column` | `device_user_id` | Column on the subject model's table holding the device PIN |
 | `device_sync.online_threshold_seconds` | `90` | How recently a push device must have been seen to count "online" |
 | `device_sync.notify_after_failures` / `notify_every` | `2` / `5` | `AttendanceDeviceSyncFailed` escalation schedule |
+| `default_shift` | 09:00–18:00, 15min grace, Friday off | Fallback used by `ShiftResolver` when no roster entry covers a date |
+| `salary.working_days_per_month` | `30` | Divides `basic_salary` into a per-day rate for deductions |
+| `salary.late_deduction_ratio` | `3` | Every Nth late day docks one more day's pay |
+| `salary.deduct_for_absent` / `deduct_for_late` | `true` / `true` | Turn either deduction rule off |
 
 ## Routes reference
 
@@ -224,6 +305,9 @@ Both sync modes funnel through one shared `AttendanceDeviceSyncService::ingestLo
 | POST | `/attendance/corrections/{id}/approve\|reject` | `corrections` (behind `review_middleware`) |
 | GET/POST/PUT/DELETE | `/attendance/devices...` | `device_sync` (behind `review_middleware`) |
 | GET/POST | `/iclock/cdata`, `/iclock/getrequest`, `/iclock/devicecmd` | `device_sync` — public, no prefix, fixed paths (device firmware calls these directly) |
+| GET | `/attendance/reports/daily\|monthly\|employee/{id}\|salary` | `summaries` (`salary` route also needs `features.salary`), behind `review_middleware` |
+
+`Employee`/`Shift`/`EmployeeShift`/`Holiday`/`LeaveType`/`Leave` have no bundled CRUD routes — they're plain Eloquent models; build whatever create/edit screens your own app/GUI needs directly against them (same as any other model in your app).
 
 ## Tested against real devices
 
@@ -247,12 +331,12 @@ Runs against sqlite in-memory by default (Orchestra Testbench). To run against a
 DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=your_test_db DB_USERNAME=... DB_PASSWORD=... composer test
 ```
 
-15 tests cover: punch resolution priority (manual over device), correction approve/reject creating real punches, all four events, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, and the HTTP routes.
+28 tests / 75 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the HTTP routes, and the full HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch, and salary deduction arithmetic.
 
 ## Roadmap
 
-- **Tier 2 — summaries/shift rules** (optional): daily present/late/absent/holiday computation via `Contracts\ShiftResolver` / `LeaveChecker` / `HolidayChecker`, so your app supplies real shift/leave/holiday logic instead of the package guessing at it.
 - Packagist publish.
+- A pluggable `ShiftResolver`/leave/holiday *contract* for teams who want summaries against their own existing shift/roster system instead of this package's `Shift`/`EmployeeShift`.
 
 ## License
 

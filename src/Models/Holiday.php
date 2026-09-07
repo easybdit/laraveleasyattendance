@@ -1,0 +1,37 @@
+<?php
+
+namespace Easybdit\LaravelEasyAttendance\Models;
+
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
+
+class Holiday extends Model
+{
+    protected $fillable = ['name', 'date', 'is_recurring_yearly'];
+
+    protected $casts = [
+        'date' => 'date',
+        'is_recurring_yearly' => 'boolean',
+    ];
+
+    /**
+     * Is $date a holiday — either an exact match, or the same month/day
+     * as a recurring-yearly one (a different year is fine).
+     *
+     * Named onDate(), not on() — Eloquent\Model already declares a static
+     * on($connection) for choosing a DB connection; overriding it with an
+     * incompatible signature is a fatal error, not just a shadow.
+     */
+    public static function onDate(string $date): ?self
+    {
+        $carbon = Carbon::parse($date);
+
+        return static::where('date', $carbon->toDateString())
+            ->orWhere(function ($q) use ($carbon) {
+                $q->where('is_recurring_yearly', true)
+                    ->whereMonth('date', $carbon->month)
+                    ->whereDay('date', $carbon->day);
+            })
+            ->first();
+    }
+}

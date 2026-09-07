@@ -60,5 +60,11 @@ abstract class TestCase extends Orchestra
         $app['config']->set('attendance.subject_model', User::class);
         $app['config']->set('attendance.features.corrections', true);
         $app['config']->set('attendance.features.device_sync', true);
+        $app['config']->set('attendance.features.employees', true);
+        $app['config']->set('attendance.features.shifts', true);
+        $app['config']->set('attendance.features.holidays', true);
+        $app['config']->set('attendance.features.leave', true);
+        $app['config']->set('attendance.features.summaries', true);
+        $app['config']->set('attendance.features.salary', true);
     }
 }

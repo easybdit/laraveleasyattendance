@@ -5,11 +5,24 @@ All notable changes to this project are documented here. Format follows [Keep a 
 ## [Unreleased]
 
 ### Added
-- Automated test suite (PHPUnit + Orchestra Testbench), 15 tests / 50 assertions: punch resolution priority (manual over device), correction approve/reject creating real punches, all four events, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, and the HTTP routes. Runs against sqlite in-memory by default, overridable via env vars for any other driver — see the README's Testing section.
+- Automated test suite (PHPUnit + Orchestra Testbench). Runs against sqlite in-memory by default, overridable via env vars for any other driver — see the README's Testing section.
+- **HR core**, optional (`ATTENDANCE_FEATURE_HR_CORE=true` for all of it, or toggle each piece individually):
+  - `Employee` — the package's own subject model (salary, allowances, device PIN); uses `HasAttendance` itself, so check-in/out and device sync work on it directly
+  - `Shift` + `EmployeeShift` (schedule/roster) — working hours, late grace, off days, assigned per employee per date range; `ShiftResolver` falls back to `config('attendance.default_shift')` when no roster entry covers a date
+  - `Holiday`, including recurring-yearly (same month/day, any year)
+  - `Leave` (+ `LeaveType`) — request/approve/reject, same pattern as attendance corrections; an approved leave outranks even a stray punch
+  - `AttendanceSummaryService` — daily present/late/absent/leave/holiday/day_off computation from the punch log + shift + leave + holiday, priority-ordered; `attendance:build-summaries` command
+  - `SalaryService` — generates a `SalarySlip` from a month's summaries (rebuilding them first); simple override-able deduction rule (absent days + every Nth late day dock a per-day rate); `attendance:generate-salary` command
+  - `AttendanceReportController` — read-only JSON reports: daily, monthly grid, employee-wise range, salary
+  - Events: `LeaveRequested`, `LeaveReviewed`, `AttendanceMarkedLate`
+- Test suite grew to 28 tests / 75 assertions covering all of the above (summary status priority, late-minute math, recurring holidays, leave overriding a punch, salary deduction arithmetic) alongside the existing core/device-sync coverage.
+
+### Fixed
+- `Holiday::on()` collided with `Eloquent\Model`'s own static `on($connection)` — incompatible signature, fatal error on any use. Renamed to `Holiday::onDate()`.
 
 ### Planned
-- Tier 2: optional summaries/shift-rules engine (`Contracts\ShiftResolver`, `LeaveChecker`, `HolidayChecker`)
 - Packagist publish
+- A pluggable shift/leave/holiday contract for teams who want summaries against their own existing roster system instead of this package's `Shift`/`EmployeeShift`
 
 ## [0.2.1] - 2026-09-07
 

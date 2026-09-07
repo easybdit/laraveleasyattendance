@@ -43,7 +43,19 @@ return [
     'features' => [
         'corrections' => env('ATTENDANCE_FEATURE_CORRECTIONS', true),
         'device_sync' => env('ATTENDANCE_FEATURE_DEVICE_SYNC', false),
-        'summaries'   => env('ATTENDANCE_FEATURE_SUMMARIES', false),
+        'summaries'   => env('ATTENDANCE_FEATURE_SUMMARIES', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+
+        // HR core — each independently toggleable (off by default, so a
+        // pure check-in/out install never pays for tables it doesn't use),
+        // but every one of them falls back to ATTENDANCE_FEATURE_HR_CORE
+        // when not set individually — set that one var true to turn the
+        // whole employee/shift/holiday/leave/summary/salary stack on at
+        // once instead of six separate env lines.
+        'employees' => env('ATTENDANCE_FEATURE_EMPLOYEES', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'shifts'    => env('ATTENDANCE_FEATURE_SHIFTS', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'holidays'  => env('ATTENDANCE_FEATURE_HOLIDAYS', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'leave'     => env('ATTENDANCE_FEATURE_LEAVE', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'salary'    => env('ATTENDANCE_FEATURE_SALARY', env('ATTENDANCE_FEATURE_HR_CORE', false)),
     ],
 
     /*
@@ -51,10 +63,9 @@ return [
     | Work window
     |--------------------------------------------------------------------------
     |
-    | Simple defaults used by the built-in (fallback) shift resolver when
-    | the "summaries" feature is on and no custom resolver is bound.
-    | Bind Easybdit\LaravelEasyAttendance\Contracts\ShiftResolver in your
-    | own service provider to replace this with real shift/roster logic.
+    | Fallback shift used by ShiftResolver for an employee with no Shift
+    | assigned via employee_shifts (schedule) — so summaries/salary still
+    | work the moment you enable them, before you've set up any shifts.
     |
     */
     'default_shift' => [
@@ -91,6 +102,25 @@ return [
         // silent either. Listen for the event to notify however you like.
         'notify_after_failures' => 2,
         'notify_every' => 5,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Salary generation
+    |--------------------------------------------------------------------------
+    |
+    | Only active when features.salary is true. A deliberately simple,
+    | override-able default rule: absent days each dock one full per-day
+    | rate; every Nth late day in the month docks one too (matches the
+    | "late N times = 1 absent" policy common in Bangladeshi offices this
+    | package was first built for) — read SalaryService if yours differs.
+    |
+    */
+    'salary' => [
+        'working_days_per_month' => env('ATTENDANCE_SALARY_WORKING_DAYS', 30),
+        'late_deduction_ratio' => env('ATTENDANCE_SALARY_LATE_RATIO', 3), // every 3rd late day = 1 absent
+        'deduct_for_absent' => true,
+        'deduct_for_late' => true,
     ],
 
 ];

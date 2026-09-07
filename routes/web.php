@@ -3,6 +3,7 @@
 use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceCorrectionController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceDeviceController;
+use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/check-in', [AttendanceController::class, 'checkIn'])->name('attendance.check-in');
@@ -27,5 +28,17 @@ if (config('attendance.features.device_sync', false)) {
         Route::delete('/{device}', [AttendanceDeviceController::class, 'destroy'])->name('attendance.devices.destroy');
         Route::post('/{device}/test', [AttendanceDeviceController::class, 'test'])->name('attendance.devices.test');
         Route::post('/{device}/pull', [AttendanceDeviceController::class, 'pull'])->name('attendance.devices.pull');
+    });
+}
+
+if (config('attendance.features.summaries', false)) {
+    Route::middleware(config('attendance.routes.review_middleware', ['web', 'auth']))->prefix('reports')->group(function () {
+        Route::get('/daily', [AttendanceReportController::class, 'daily'])->name('attendance.reports.daily');
+        Route::get('/monthly', [AttendanceReportController::class, 'monthly'])->name('attendance.reports.monthly');
+        Route::get('/employee/{employee}', [AttendanceReportController::class, 'employeeWise'])->name('attendance.reports.employee');
+
+        if (config('attendance.features.salary', false)) {
+            Route::get('/salary', [AttendanceReportController::class, 'salary'])->name('attendance.reports.salary');
+        }
     });
 }

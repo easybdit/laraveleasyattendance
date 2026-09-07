@@ -2,6 +2,8 @@
 
 namespace Easybdit\LaravelEasyAttendance;
 
+use Easybdit\LaravelEasyAttendance\Console\Commands\BuildAttendanceSummaries;
+use Easybdit\LaravelEasyAttendance\Console\Commands\GenerateSalary;
 use Easybdit\LaravelEasyAttendance\Console\Commands\InstallCommand;
 use Easybdit\LaravelEasyAttendance\Console\Commands\SyncAttendanceDevices;
 use Illuminate\Support\Facades\Route;
@@ -33,6 +35,8 @@ class LaravelEasyAttendanceServiceProvider extends ServiceProvider
             $this->commands([
                 InstallCommand::class,
                 SyncAttendanceDevices::class,
+                BuildAttendanceSummaries::class,
+                GenerateSalary::class,
             ]);
         }
 
