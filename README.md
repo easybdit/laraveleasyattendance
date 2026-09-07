@@ -19,6 +19,7 @@ Extracted and redesigned from a production HR system's attendance module, and va
 - [Configuration reference](#configuration-reference)
 - [Routes reference](#routes-reference)
 - [Tested against real devices](#tested-against-real-devices)
+- [Testing](#testing)
 - [Roadmap](#roadmap)
 
 ## Install
@@ -232,6 +233,21 @@ Not just unit-tested against fixtures — validated end to end against actual pr
 - **Pull (IP), connection only:** registered a live device, tested the connection — succeeded, confirmed **zero** attendance rows existed for it beforehand (nothing is fetched just by registering/testing).
 - **Pull (IP), full sync:** same device, `pull` — **7,136 real attendance logs fetched in ~13 seconds**. PINs with no matching subject were correctly reported (not silently dropped) and produced no rows.
 - **Pull (IP), matched subject:** assigned a subject a real PIN seen in that log, pulled again — **23 real historical punches** (spanning roughly 4 months of real dates) landed on that subject and were immediately queryable via `$user->attendances()` and `$user->attendanceOn($date)`.
+
+## Testing
+
+```bash
+composer install
+composer test
+```
+
+Runs against sqlite in-memory by default (Orchestra Testbench). To run against another driver instead — e.g. this repo's own dev environment, which has no `pdo_sqlite` — set real env vars, no file to edit:
+
+```bash
+DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=your_test_db DB_USERNAME=... DB_PASSWORD=... composer test
+```
+
+15 tests cover: punch resolution priority (manual over device), correction approve/reject creating real punches, all four events, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, and the HTTP routes.
 
 ## Roadmap
 

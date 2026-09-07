@@ -4,6 +4,9 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- Automated test suite (PHPUnit + Orchestra Testbench), 15 tests / 50 assertions: punch resolution priority (manual over device), correction approve/reject creating real punches, all four events, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, and the HTTP routes. Runs against sqlite in-memory by default, overridable via env vars for any other driver — see the README's Testing section.
+
 ### Planned
 - Tier 2: optional summaries/shift-rules engine (`Contracts\ShiftResolver`, `LeaveChecker`, `HolidayChecker`)
 - Packagist publish

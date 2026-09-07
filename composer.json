@@ -15,8 +15,15 @@
         "illuminate/support": "^11.0|^12.0|^13.0",
         "illuminate/database": "^11.0|^12.0|^13.0"
     },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0|^11.0",
+        "phpunit/phpunit": "^10.0|^11.0|^12.0"
+    },
     "suggest": {
         "coding-libs/zkteco-php": "Required for pull-mode device sync (connecting out to a ZKTeco device's IP). Not needed for push/ADMS mode."
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
     },
     "autoload": {
         "psr-4": {
