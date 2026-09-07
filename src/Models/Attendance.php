@@ -10,6 +10,7 @@ class Attendance extends Model
     protected $fillable = [
         'subject_type', 'subject_id',
         'time', 'type', 'source', 'is_manual', 'meta',
+        'device_id', 'device_user_id',
     ];
 
     protected $casts = [
@@ -21,6 +22,11 @@ class Attendance extends Model
     public function subject()
     {
         return $this->morphTo();
+    }
+
+    public function device()
+    {
+        return $this->belongsTo(AttendanceDevice::class, 'device_id');
     }
 
     /**

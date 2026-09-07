@@ -64,4 +64,33 @@ return [
         'week_off_day' => 'Friday', // Carbon day name, or null for none
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Device sync (ZKTeco / compatible biometric devices)
+    |--------------------------------------------------------------------------
+    |
+    | Only active when features.device_sync is true. Requires
+    | codinglibs/zkteco-php (composer require codinglibs/zkteco-php) for
+    | pull-mode devices; push/ADMS mode needs nothing extra since the
+    | device talks to us over plain HTTP.
+    |
+    | pin_column: the column on your subject model's table that holds the
+    | device PIN (the ZK device's own numeric user id) — used to match an
+    | incoming punch to a subject. Add this column yourself (a plain
+    | nullable string is enough); the package doesn't migrate your subject
+    | table for you since it doesn't own it.
+    |
+    */
+    'device_sync' => [
+        'pin_column' => env('ATTENDANCE_DEVICE_PIN_COLUMN', 'device_user_id'),
+        'online_threshold_seconds' => 90,
+
+        // Escalating sync-failure alert: fire AttendanceDeviceSyncFailed
+        // the Nth failure in a row, then again every M failures after
+        // that, so one blip doesn't spam but a real outage doesn't go
+        // silent either. Listen for the event to notify however you like.
+        'notify_after_failures' => 2,
+        'notify_every' => 5,
+    ],
+
 ];

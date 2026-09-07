@@ -3,6 +3,7 @@
 namespace Easybdit\LaravelEasyAttendance;
 
 use Easybdit\LaravelEasyAttendance\Console\Commands\InstallCommand;
+use Easybdit\LaravelEasyAttendance\Console\Commands\SyncAttendanceDevices;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -31,10 +32,12 @@ class LaravelEasyAttendanceServiceProvider extends ServiceProvider
 
             $this->commands([
                 InstallCommand::class,
+                SyncAttendanceDevices::class,
             ]);
         }
 
         $this->registerRoutes();
+        $this->registerAdmsRoutes();
     }
 
     protected function registerRoutes(): void
@@ -46,5 +49,21 @@ class LaravelEasyAttendanceServiceProvider extends ServiceProvider
         Route::prefix(config('attendance.routes.prefix', 'attendance'))
             ->middleware(config('attendance.routes.middleware', ['web', 'auth']))
             ->group(__DIR__.'/../routes/web.php');
+    }
+
+    /**
+     * Deliberately registered with NO middleware group at all — not even
+     * 'web' — because a ZK device can't carry a session or a CSRF token.
+     * Skipping 'web' means Laravel's CSRF middleware never sees these
+     * routes in the first place, so (unlike routes/web.php-based ADMS
+     * receivers elsewhere) there's nothing to exempt in bootstrap/app.php.
+     */
+    protected function registerAdmsRoutes(): void
+    {
+        if (! config('attendance.features.device_sync', false)) {
+            return;
+        }
+
+        Route::group([], __DIR__.'/../routes/adms.php');
     }
 }
