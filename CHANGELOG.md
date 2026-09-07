@@ -4,6 +4,11 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- Management HTTP endpoints for `Employee`, `Shift`, schedule (`EmployeeShift`) assignment, and `Leave` request/approve/reject — `EmployeeController`, `ShiftController`, `LeaveController`. All nested under an explicit `{employee}` (HR/admin actions, not "my own" self-service — `Employee` is a separate concept from whatever `attendance.subject_model` your `Auth::user()` is), behind `review_middleware`.
+- `LICENSE` file (MIT) — was only declared in `composer.json` before, missing the actual file GitHub/Packagist expect.
+- Test suite grew to 43 tests / 113 assertions with the new HTTP endpoints covered.
+
 ### Planned
 - Packagist publish
 - A pluggable shift/leave/holiday contract for teams who want summaries against their own existing roster system instead of this package's `Shift`/`EmployeeShift`

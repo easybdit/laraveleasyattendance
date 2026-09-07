@@ -231,18 +231,19 @@ use Easybdit\LaravelEasyAttendance\Services\{AttendanceSummaryService, SalarySer
        'status' => 'active',
    ]);
    ```
-   `Employee` itself uses `HasAttendance`, so `$employee->checkIn()`, `->checkOut()`, device sync — everything from the sections above — works on it directly.
+   `Employee` itself uses `HasAttendance`, so `$employee->checkIn()`, `->checkOut()`, device sync — everything from the sections above — works on it directly. Also manageable over HTTP: `GET/POST /attendance/employees`, `GET/PUT/DELETE /attendance/employees/{id}`.
 
 2. **Shift** — working hours + late grace + off days.
    ```php
    $shift = Shift::create(['name' => 'General', 'start_time' => '09:00', 'end_time' => '17:00', 'late_grace_minutes' => 10, 'off_days' => ['Friday']]);
    ```
+   Or `GET/POST /attendance/shifts`, `PUT/DELETE /attendance/shifts/{id}`.
 
 3. **Schedule** (`EmployeeShift`) — assign a shift to an employee for a date range (open-ended `end_date` = still current):
    ```php
    EmployeeShift::create(['employee_id' => $employee->id, 'shift_id' => $shift->id, 'start_date' => '2026-08-01']);
    ```
-   No assignment covering a date? `ShiftResolver` falls back to `config('attendance.default_shift')` — summaries work from day one, before you've set up a single shift.
+   No assignment covering a date? `ShiftResolver` falls back to `config('attendance.default_shift')` — summaries work from day one, before you've set up a single shift. Or `GET/POST /attendance/employees/{id}/schedule`.
 
 4. **Holiday** — a date nobody's expected to work, with no punch needed to explain the day.
    ```php
@@ -254,7 +255,7 @@ use Easybdit\LaravelEasyAttendance\Services\{AttendanceSummaryService, SalarySer
    $leave = $employee->requestLeave(['start_date' => '2026-09-03', 'end_date' => '2026-09-03', 'reason' => 'personal']);
    $leave->approve($reviewerId); // or ->reject(...)
    ```
-   An approved leave outranks everything else for that date — even a stray punch.
+   An approved leave outranks everything else for that date — even a stray punch. Or `GET/POST /attendance/employees/{id}/leaves`, `POST /attendance/leaves/{id}/approve|reject`.
 
 6. **Attendance summary** — the actual present/late/absent/leave/holiday/day_off computation, one row per employee per day:
    ```bash
@@ -419,8 +420,13 @@ net_salary=7433.34                   (26000 − 19933.33 + 500 + 866.67)
 | GET/POST/PUT/DELETE | `/attendance/devices...` | `device_sync` (behind `review_middleware`) |
 | GET/POST | `/iclock/cdata`, `/iclock/getrequest`, `/iclock/devicecmd` | `device_sync` — public, no prefix, fixed paths (device firmware calls these directly) |
 | GET | `/attendance/reports/daily\|monthly\|employee/{id}\|salary` | `summaries` (`salary` route also needs `features.salary`), behind `review_middleware` |
+| GET/POST/PUT/DELETE | `/attendance/employees...` | `employees`, behind `review_middleware` |
+| GET/POST | `/attendance/employees/{id}/schedule` | `employees` + `shifts`, behind `review_middleware` |
+| GET/POST/PUT/DELETE | `/attendance/shifts...` | `shifts`, behind `review_middleware` |
+| GET/POST | `/attendance/employees/{id}/leaves` | `employees` + `leave`, behind `review_middleware` |
+| POST | `/attendance/leaves/{id}/approve\|reject` | `leave`, behind `review_middleware` |
 
-`Employee`/`Shift`/`EmployeeShift`/`Holiday`/`LeaveType`/`Leave` have no bundled CRUD routes — they're plain Eloquent models; build whatever create/edit screens your own app/GUI needs directly against them (same as any other model in your app).
+All the employee/shift/leave routes above take an explicit `{employee}` — they're HR/admin management endpoints, not "my own" self-service, since `Employee` is a separate concept from whatever `attendance.subject_model` your `Auth::user()` actually is (see [Core concept: the subject model](#core-concept-the-subject-model)). `Holiday`/`LeaveType`/`OvertimeRecord`/`SpecialWorkingDay` still have no bundled routes — plain Eloquent models; build whatever your app/GUI needs directly against them.
 
 ## Tested against real devices
 
@@ -444,7 +450,7 @@ Runs against sqlite in-memory by default (Orchestra Testbench). To run against a
 DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=your_test_db DB_USERNAME=... DB_PASSWORD=... composer test
 ```
 
-39 tests / 94 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the HTTP routes, the HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch — and overtime/special-working-day pay: the late-ratio deduction boundary (2 vs. 3 late days), OT capped at `max_hours_per_day` and only paid once approved (a rebuild can't reopen an already-reviewed record), special-day type auto-detection, and pay withheld unless the employee actually showed up.
+43 tests / 113 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the check-in/correction HTTP routes, the HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch, overtime/special-working-day pay (the late-ratio deduction boundary, OT capped-and-approval-gated, special-day type auto-detection, pay withheld unless the employee showed up) — and the employee/shift/schedule/leave management HTTP routes.
 
 ## Roadmap
 
