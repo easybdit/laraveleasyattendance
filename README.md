@@ -13,6 +13,9 @@ Extracted and redesigned from a production HR system's attendance module, and va
 - [Corrections](#corrections)
 - [Events](#events)
 - [ZKTeco device sync](#zkteco-device-sync)
+  - [Mode A — Pull](#mode-a--pull-server-connects-out-to-the-device)
+  - [Mode B — Push/ADMS](#mode-b--push--adms-the-device-connects-to-you)
+  - [Viewing synced data](#viewing-synced-data)
 - [Configuration reference](#configuration-reference)
 - [Routes reference](#routes-reference)
 - [Tested against real devices](#tested-against-real-devices)
@@ -102,30 +105,94 @@ The package has no opinion on notifications — listen for these and send howeve
 
 ## ZKTeco device sync
 
+The one rule that matters for both modes below: **nothing shows up in `attendances` until a sync actually runs.** Adding a device just registers it — it does not fetch anything by itself. Pull mode fetches only when you call `pull` (or the scheduled command runs); push mode only stores data once the physical device actually calls your server. Always: **connect/register → sync → then query the data** — never the other way round.
+
+### 0. Turn the feature on (once)
+
 ```
 ATTENDANCE_FEATURE_DEVICE_SYNC=true
 ```
-
-Then re-run migrations (adds `attendance_devices` + `device_id`/`device_user_id` columns on `attendances`, unique-constrained so the same punch can never be imported twice). Two sync modes, side by side — pick whichever fits a given device, or run both against different devices at once:
-
-**Pull** — your server connects out to the device's IP on the local network.
 ```bash
-composer require coding-libs/zkteco-php
+php artisan migrate
 ```
-```
-POST /attendance/devices/{id}/pull        # on demand
-php artisan attendance:sync-devices       # scheduled — keeps backlogs small
+This adds the `attendance_devices` table and `device_id`/`device_user_id` columns on `attendances` (unique-constrained, so the same physical punch can never be imported twice even if you sync it twice).
+
+Your subject model (`User`, `Employee`, ...) also needs a **PIN column** — this is what matches an incoming punch to a person. Add it yourself, e.g.:
+
+```php
+Schema::table('users', function (Blueprint $table) {
+    $table->string('device_user_id')->nullable()->unique();
+});
 ```
 
-**Push (ADMS)** — the device dials home to you instead (for a device your server can't reach directly: remote site, no static IP, no VPN). Point its "Cloud Server" setting at your app's domain, Server Mode `ADMS`:
-```
-GET|POST /iclock/cdata
-GET      /iclock/getrequest
-POST     /iclock/devicecmd
-```
-No extra package needed. These routes are deliberately registered **without** the `web` middleware group — a device firmware can't carry a session or a CSRF token — so unlike most ADMS implementations, there's nothing to exempt in your `bootstrap/app.php`.
+Then set each person's device PIN (`$user->device_user_id = '1001'`). A punch whose PIN matches nobody is **skipped and reported back**, not silently dropped — you'll see it in the pull response's `unmatched` list, or in the log on a push.
 
-Both modes funnel through one shared `AttendanceDeviceSyncService::ingestLogs()`, so a punch is handled identically no matter which direction it arrived from. Your subject model needs a PIN column (default `device_user_id`, rename via `config('attendance.device_sync.pin_column')`) holding each person's device PIN — a punch whose PIN matches nobody is **skipped and reported back** (`unmatched` in the response, logged on push), never silently dropped.
+### Mode A — Pull (server connects out to the device)
+
+Use this when your server can reach the device's IP directly (same network / VPN).
+
+1. **Install the ZK client library** (only needed for pull):
+   ```bash
+   composer require coding-libs/zkteco-php
+   ```
+2. **Register the device:**
+   ```php
+   $device = AttendanceDevice::create([
+       'name' => 'Main Gate',
+       'ip' => '192.168.1.50',
+       'port' => 4370,
+       'status' => 'active',
+   ]);
+   ```
+   or `POST /attendance/devices` with the same fields. Nothing is fetched yet at this point.
+3. **(optional) Test the connection first**, before pulling any data — confirms the device is reachable without importing anything:
+   ```
+   POST /attendance/devices/{id}/test
+   ```
+4. **Pull — this is the step that actually fetches and stores the data:**
+   ```
+   POST /attendance/devices/{id}/pull
+   ```
+   or on a schedule so backlogs stay small:
+   ```php
+   // routes/console.php
+   Schedule::command('attendance:sync-devices')->everyFiveMinutes();
+   ```
+   The response tells you exactly what happened: `{"success": true, "message": "134 logs fetched · 12 new · 2 PIN(s) not matched...", "imported": 12, "unmatched": [...]}`.
+5. **Now query the data** (see [Viewing synced data](#viewing-synced-data) below) — before this step there is nothing to see for this device.
+
+### Mode B — Push / ADMS (the device connects to you)
+
+Use this when your server *can't* reach the device directly (remote site, no static IP, no VPN) — the device dials home to you instead. No extra composer package needed.
+
+1. **Register the device with its serial number** (found on the device itself / its admin menu):
+   ```php
+   AttendanceDevice::create(['name' => 'Branch Office', 'serial_number' => 'ABCD1234', 'status' => 'active']);
+   ```
+2. **Point the device at your server:** on the device, Menu → Comm → Cloud Server Setting → Server Mode `ADMS`, Server Address = your app's domain, Enable = on.
+3. **Wait for the device to call in.** It hits these fixed paths itself, on its own schedule (typically every 30s–a few minutes) — nothing to trigger from your side:
+   ```
+   GET|POST /iclock/cdata        (handshake, then the actual punch data)
+   GET      /iclock/getrequest   (heartbeat / command poll)
+   ```
+4. **Check `is_online`/`last_seen_at`** on the device to confirm it has connected — that tells you the *connection* is live, before you check for data:
+   ```php
+   $device->fresh()->is_online;      // true once it's called in within the last 90s
+   $device->fresh()->last_synced_at; // set the first time it actually sends punch data
+   ```
+5. **Now query the data** — populated automatically as the device pushes, no action needed on your end once step 2 is configured correctly.
+
+### Viewing synced data
+
+Regardless of which mode filled it in, synced punches are ordinary `Attendance` rows (`source: 'device'`) on the matched subject — query them the same way as manual punches:
+
+```php
+$user->attendances()->where('source', 'device')->get();   // raw punch log
+$user->attendanceOn('2026-09-07');                          // resolved first-in/last-out for a day
+$device->attendances()->latest('time')->first();            // most recent punch from a specific device
+```
+
+Both sync modes funnel through one shared `AttendanceDeviceSyncService::ingestLogs()`, so a punch is handled identically no matter which direction it arrived from — same matching, same dedup, same `AttendanceRecorded` event.
 
 ## Configuration reference
 
@@ -159,10 +226,12 @@ Both modes funnel through one shared `AttendanceDeviceSyncService::ingestLogs()`
 
 ## Tested against real devices
 
-Not just unit-tested against fixtures — validated against actual production ZKTeco hardware during development:
+Not just unit-tested against fixtures — validated end to end against actual production ZKTeco hardware, following the exact register → connect/sync → query sequence documented above:
 
 - **Push (ADMS):** simulated a real device's ATTLOG push (its genuine serial number) against `/iclock/cdata` — handshake accepted, punch ingested, heartbeat updated.
-- **Pull (IP):** connected directly to a live device over the internet — **7,136 real attendance logs fetched in ~13 seconds**, with every PIN that didn't match a known subject correctly reported instead of silently dropped.
+- **Pull (IP), connection only:** registered a live device, tested the connection — succeeded, confirmed **zero** attendance rows existed for it beforehand (nothing is fetched just by registering/testing).
+- **Pull (IP), full sync:** same device, `pull` — **7,136 real attendance logs fetched in ~13 seconds**. PINs with no matching subject were correctly reported (not silently dropped) and produced no rows.
+- **Pull (IP), matched subject:** assigned a subject a real PIN seen in that log, pulled again — **23 real historical punches** (spanning roughly 4 months of real dates) landed on that subject and were immediately queryable via `$user->attendances()` and `$user->attendanceOn($date)`.
 
 ## Roadmap
 

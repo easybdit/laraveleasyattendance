@@ -8,6 +8,19 @@ All notable changes to this project are documented here. Format follows [Keep a 
 - Tier 2: optional summaries/shift-rules engine (`Contracts\ShiftResolver`, `LeaveChecker`, `HolidayChecker`)
 - Packagist publish
 
+## [0.2.1] - 2026-09-07
+
+### Docs
+- README's device sync section rewritten as an explicit, numbered register → connect/sync → query walkthrough for each mode (Pull, Push/ADMS), plus a dedicated "Viewing synced data" section — the one rule that matters (nothing is visible until a sync actually runs) is now stated up front instead of implied.
+- Added a Contents table of links and a full config/routes reference table.
+- Added `CHANGELOG.md` (this file).
+
+### Validated
+- Rechecked the full pull-mode sequence step by step against a live device, calling the same controller code the HTTP routes use:
+  - registering + testing a device fetches nothing by itself (confirmed zero rows for it beforehand)
+  - `pull` — 7,136 real logs fetched in ~13s; PINs with no matching subject correctly reported instead of imported
+  - with a subject's PIN set to match a real PIN from that log, a second pull landed 23 real historical punches (~4 months of real dates) on that subject, immediately queryable via `attendances()`/`attendanceOn()`
+
 ## [0.2.0] - 2026-09-07
 
 ### Added
