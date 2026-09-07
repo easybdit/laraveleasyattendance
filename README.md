@@ -48,3 +48,18 @@ ATTENDANCE_SUBJECT_MODEL=App\\Models\\Employee
 ```
 
 Add `HasAttendance` to that model instead of `User`.
+
+## ZKTeco device sync (optional)
+
+```
+ATTENDANCE_FEATURE_DEVICE_SYNC=true
+```
+
+Then re-run migrations (adds `attendance_devices` + device columns on `attendances`). Two sync modes, side by side — use whichever fits a given device:
+
+- **Pull** — the server connects out to the device's IP. Needs `composer require codinglibs/zkteco-php`. Trigger it via `POST /attendance/devices/{id}/pull`, or schedule `php artisan attendance:sync-devices` so backlogs stay small.
+- **Push (ADMS)** — the device dials home to `/iclock/cdata` etc. Point its "Cloud Server" setting at your app's domain. No extra package needed, and no CSRF setup either — these routes are registered outside the `web` middleware group.
+
+Your subject model needs a PIN column (default `device_user_id`) holding each person's device PIN — add it yourself (`config('attendance.device_sync.pin_column')` to rename it). A punch with no matching PIN is skipped and reported back, not silently dropped.
+
+Listen for `AttendanceDeviceSyncFailed` to alert on a device that's stopped syncing.
