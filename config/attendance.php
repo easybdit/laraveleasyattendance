@@ -70,7 +70,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Only active when features.device_sync is true. Requires
-    | codinglibs/zkteco-php (composer require codinglibs/zkteco-php) for
+    | coding-libs/zkteco-php (composer require coding-libs/zkteco-php) for
     | pull-mode devices; push/ADMS mode needs nothing extra since the
     | device talks to us over plain HTTP.
     |

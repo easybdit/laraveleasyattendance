@@ -3,12 +3,12 @@
 namespace Easybdit\LaravelEasyAttendance\Services;
 
 /**
- * Thin wrapper around codinglibs/zkteco-php's ZKTeco client — kept as its
+ * Thin wrapper around coding-libs/zkteco-php's ZKTeco client — kept as its
  * own class (rather than calling the library directly from
  * AttendanceDeviceSyncService) so a different pull-mode library can be
  * swapped in later without touching the sync logic.
  *
- * composer require codinglibs/zkteco-php to use pull-mode devices; push/ADMS
+ * composer require coding-libs/zkteco-php to use pull-mode devices; push/ADMS
  * mode (AdmsPushController) doesn't need this at all.
  */
 class ZKService
@@ -19,7 +19,7 @@ class ZKService
     {
         if (! class_exists(\CodingLibs\ZktecoPhp\Libs\ZKTeco::class)) {
             throw new \RuntimeException(
-                'Pull-mode device sync needs codinglibs/zkteco-php. Install it with: composer require codinglibs/zkteco-php'
+                'Pull-mode device sync needs coding-libs/zkteco-php. Install it with: composer require coding-libs/zkteco-php'
             );
         }
 
