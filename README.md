@@ -17,6 +17,7 @@ Extracted and redesigned from a production HR system's attendance module, and va
   - [Mode B — Push/ADMS](#mode-b--push--adms-the-device-connects-to-you)
   - [Viewing synced data](#viewing-synced-data)
 - [HR core: shifts, leave, holidays, summaries, salary](#hr-core-shifts-leave-holidays-summaries-salary)
+  - [Full worked example](#full-worked-example)
 - [Configuration reference](#configuration-reference)
 - [Routes reference](#routes-reference)
 - [Tested against real devices](#tested-against-real-devices)
@@ -211,6 +212,12 @@ php artisan migrate
 ```
 (Each piece — `employees`, `shifts`, `holidays`, `leave`, `summaries`, `salary` — is also an individually toggleable `ATTENDANCE_FEATURE_*` flag, in case you only want some of them.)
 
+Every class below is under `Easybdit\LaravelEasyAttendance\`:
+```php
+use Easybdit\LaravelEasyAttendance\Models\{Employee, Shift, EmployeeShift, Holiday, LeaveType, Leave};
+use Easybdit\LaravelEasyAttendance\Services\{AttendanceSummaryService, SalaryService};
+```
+
 **The pieces, in the order you'll normally set them up:**
 
 1. **Employee** — the subject everything else attaches to.
@@ -271,6 +278,53 @@ php artisan migrate
    GET /attendance/reports/employee/{employee}?from=2026-09-01&to=2026-09-07
    GET /attendance/reports/salary?year=2026&month=9
    ```
+
+### Full worked example
+
+All eight pieces together, one employee, one week — this is a real `tinker` run, output included, so you can see exactly what each step produces:
+
+```php
+$employee = Employee::create([
+    'employee_code' => 'E-100', 'name' => 'Nusrat Jahan', 'device_user_id' => '9001',
+    'basic_salary' => 30000, 'allowances' => ['house_rent' => 5000, 'medical' => 1000],
+    'status' => 'active',
+]);
+
+$shift = Shift::create(['name' => 'General', 'start_time' => '09:00', 'end_time' => '17:00', 'late_grace_minutes' => 10, 'off_days' => ['Friday']]);
+EmployeeShift::create(['employee_id' => $employee->id, 'shift_id' => $shift->id, 'start_date' => '2026-08-01']);
+
+Holiday::create(['name' => 'Independence Day', 'date' => '2026-09-05']);
+
+$leave = $employee->requestLeave(['start_date' => '2026-09-03', 'end_date' => '2026-09-03', 'reason' => 'personal']);
+$leave->approve();
+
+// A normal week: present, a late day, on-leave, present, a holiday, present — Sunday's a
+// working day here (only Friday is off) — then the 7th is skipped entirely (genuinely absent).
+$employee->checkIn(['time' => '2026-09-01 09:05:00']); $employee->checkOut(['time' => '2026-09-01 17:10:00']);
+$employee->checkIn(['time' => '2026-09-02 09:45:00']); $employee->checkOut(['time' => '2026-09-02 17:00:00']);
+$employee->checkIn(['time' => '2026-09-04 08:55:00']); $employee->checkOut(['time' => '2026-09-04 17:05:00']);
+$employee->checkIn(['time' => '2026-09-06 09:00:00']); $employee->checkOut(['time' => '2026-09-06 17:00:00']);
+
+foreach (['2026-09-01','2026-09-02','2026-09-03','2026-09-04','2026-09-05','2026-09-06','2026-09-07'] as $d) {
+    echo $d.': '.(new AttendanceSummaryService)->buildOne($employee, $d)->status.PHP_EOL;
+}
+```
+```
+2026-09-01: present
+2026-09-02: late        (checked in 09:45, 45 min past the 09:00 shift start)
+2026-09-03: leave       (the approved leave — outranks everything)
+2026-09-04: present
+2026-09-05: holiday     (no punch needed — Holiday already explains the day)
+2026-09-06: present
+2026-09-07: absent      (no punch, not a holiday/leave/off-day)
+```
+```php
+$slip = (new SalaryService)->generate($employee, 2026, 9);
+// present=4  absent=21  late=1  leave=1
+// basic=30000.00  deduction=21000.00  net=15000.00
+// (21 absent days × 30000/30 = 21000 deduction — buildForMonth() filled in every
+// unpunched day of September as absent/day_off, not just the 7 days above)
+```
 
 ## Configuration reference
 

@@ -17,6 +17,9 @@ All notable changes to this project are documented here. Format follows [Keep a 
   - Events: `LeaveRequested`, `LeaveReviewed`, `AttendanceMarkedLate`
 - Test suite grew to 28 tests / 75 assertions covering all of the above (summary status priority, late-minute math, recurring holidays, leave overriding a punch, salary deduction arithmetic) alongside the existing core/device-sync coverage.
 
+### Docs
+- README's new HR core section includes a "Full worked example" — all eight pieces (employee → shift → schedule → holiday → leave → punches → summaries → salary) together in one real, runnable script with the actual output alongside it, not just isolated per-feature snippets.
+
 ### Fixed
 - `Holiday::on()` collided with `Eloquent\Model`'s own static `on($connection)` — incompatible signature, fatal error on any use. Renamed to `Holiday::onDate()`.
 
