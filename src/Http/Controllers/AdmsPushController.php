@@ -17,11 +17,14 @@ use Illuminate\Support\Facades\Log;
  * no static IP, no VPN) — the device dials home to us instead.
  *
  * No Laravel auth is possible here — the device firmware just calls these
- * fixed paths with its serial number (SN) as a query param, so the only
- * gate is that SN must match an already-registered attendance_devices row.
- * These routes are registered WITHOUT the 'web' middleware group (see
- * LaravelEasyAttendanceServiceProvider), so there's no CSRF check to work
- * around either — nothing to configure in your app for this to work.
+ * fixed paths with its serial number (SN) as a query param, so the main
+ * gate is that SN must match an already-registered attendance_devices row
+ * (optionally also its registered IP — see
+ * config('attendance.device_sync.adms_verify_ip')). These routes are
+ * registered WITHOUT the 'web' middleware group but WITH `throttle` (see
+ * LaravelEasyAttendanceServiceProvider) — no CSRF check to work around,
+ * and a rate limit against a flood of requests to a route nothing else
+ * gates.
  */
 class AdmsPushController extends Controller
 {
@@ -110,6 +113,20 @@ class AdmsPushController extends Controller
 
         if (! $device) {
             Log::warning('ADMS push from unregistered device serial', ['sn' => $sn, 'ip' => $request->ip()]);
+
+            return null;
+        }
+
+        // Optional extra gate — off by default (see the config's own
+        // comment on why): a device's serial number is the *only* thing
+        // ADMS push can authenticate with, since the firmware carries
+        // nothing else. If you know a device's source IP is stable and
+        // reaches you directly, this catches a push claiming a serial
+        // number it doesn't actually own.
+        if (config('attendance.device_sync.adms_verify_ip', false) && $device->ip && $device->ip !== $request->ip()) {
+            Log::warning('ADMS push IP mismatch for registered device', [
+                'sn' => $sn, 'expected_ip' => $device->ip, 'actual_ip' => $request->ip(),
+            ]);
 
             return null;
         }

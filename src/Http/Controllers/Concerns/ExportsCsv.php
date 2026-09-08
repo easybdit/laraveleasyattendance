@@ -28,10 +28,28 @@ trait ExportsCsv
             fputcsv($out, $header);
 
             foreach ($rows as $row) {
-                fputcsv($out, $row);
+                fputcsv($out, array_map([$this, 'escapeCsvFormula'], $row));
             }
 
             fclose($out);
         }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    /**
+     * Formula-injection guard: a cell whose value happens to start with
+     * =, +, -, or @ (a name/note field, say) opens as a live formula the
+     * moment someone opens this export in Excel/Sheets instead of as
+     * plain text — a well-known CSV-export risk, not specific to this
+     * package. A leading apostrophe forces spreadsheet software to treat
+     * it as text; invisible in the cell, harmless for anything downstream
+     * that just reads the CSV back as data.
+     */
+    protected function escapeCsvFormula(mixed $value): mixed
+    {
+        if (! is_string($value) || $value === '') {
+            return $value;
+        }
+
+        return in_array($value[0], ['=', '+', '-', '@'], true) ? "'".$value : $value;
     }
 }

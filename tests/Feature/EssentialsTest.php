@@ -62,6 +62,23 @@ class EssentialsTest extends TestCase
         $this->assertStringContainsString('E-701', $body);
     }
 
+    public function test_csv_export_escapes_a_cell_that_looks_like_a_spreadsheet_formula(): void
+    {
+        $admin = $this->actor();
+        // A name starting with '=' would open as a live formula the
+        // moment this CSV is opened in Excel/Sheets if left unescaped —
+        // see Http\Controllers\Concerns\ExportsCsv::escapeCsvFormula().
+        $employee = Employee::create(['employee_code' => 'E-702', 'name' => '=SUM(A1:A9)', 'basic_salary' => 20000, 'status' => 'active']);
+        $employee->checkIn(['time' => '2026-11-01 09:05:00']);
+        (new AttendanceSummaryService)->buildOne($employee, '2026-11-01');
+
+        $response = $this->actingAs($admin)->get('/attendance/reports/daily?date=2026-11-01&format=csv');
+
+        $body = $response->streamedContent();
+        $this->assertStringContainsString("E-702,'=SUM(A1:A9)", $body);
+        $this->assertStringNotContainsString('E-702,=SUM', $body);
+    }
+
     public function test_daily_report_defaults_to_json_without_format_param(): void
     {
         $admin = $this->actor();

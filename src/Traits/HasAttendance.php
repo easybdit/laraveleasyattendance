@@ -34,8 +34,20 @@ trait HasAttendance
         return $this->recordPunch('check_out', $attributes);
     }
 
+    /**
+     * $attributes is filtered to a small safe whitelist before it ever
+     * reaches the merge below — this is a public API a downstream app's
+     * own controller might naively forward $request->all() into, and
+     * 'type'/'source'/'is_manual' left open to override would let a
+     * caller quietly mislabel a manual punch as a device one (or the
+     * reverse). Add a key here only if it's meant to be caller-set.
+     */
+    private const PUNCH_ATTRIBUTE_ALLOWLIST = ['time', 'meta'];
+
     protected function recordPunch(string $type, array $attributes = []): Attendance
     {
+        $attributes = array_intersect_key($attributes, array_flip(self::PUNCH_ATTRIBUTE_ALLOWLIST));
+
         $attendance = $this->attendances()->create(array_merge([
             'time' => now(),
             'type' => $type,

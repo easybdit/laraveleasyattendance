@@ -100,4 +100,53 @@ class DeviceSyncTest extends TestCase
         $this->assertFalse($stale->is_online);
         $this->assertFalse($never->is_online);
     }
+
+    public function test_ingest_push_caps_lines_per_batch(): void
+    {
+        config(['attendance.device_sync.adms_max_lines_per_push' => 2]);
+
+        $user = User::create(['name' => 'Trent', 'device_user_id' => '5005']);
+        $device = AttendanceDevice::create(['name' => 'Gate', 'serial_number' => 'SN-TEST-5', 'status' => 'active']);
+
+        $lines = [
+            "5005\t2026-09-07 09:00:00\t0",
+            "5005\t2026-09-07 09:05:00\t0",
+            "5005\t2026-09-07 09:10:00\t0", // beyond the cap — dropped, not processed
+        ];
+
+        $imported = (new AttendanceDeviceSyncService)->ingestPush($device, $lines);
+
+        $this->assertSame(2, $imported);
+        $this->assertSame(2, $user->attendances()->count());
+        $this->assertNull($user->attendances()->whereDate('time', '2026-09-07')->where('time', '2026-09-07 09:10:00')->first());
+    }
+
+    public function test_adms_push_over_http_is_rejected_when_source_ip_does_not_match_the_registered_device(): void
+    {
+        config(['attendance.device_sync.adms_verify_ip' => true]);
+
+        $user = User::create(['name' => 'Mallory', 'device_user_id' => '4004']);
+        $device = AttendanceDevice::create(['name' => 'Gate', 'serial_number' => 'SN-TEST-6', 'ip' => '203.0.113.9', 'status' => 'active']);
+
+        $response = $this->call('POST', '/iclock/cdata?SN=SN-TEST-6&table=ATTLOG', [], [], [], [], "4004\t2026-09-07 09:00:00\t0");
+
+        $response->assertOk();
+        $this->assertSame('ERROR', $response->getContent());
+        $this->assertSame(0, $user->attendances()->count());
+    }
+
+    public function test_adms_push_over_http_succeeds_when_source_ip_matches_the_registered_device(): void
+    {
+        config(['attendance.device_sync.adms_verify_ip' => true]);
+
+        $user = User::create(['name' => 'Oscar', 'device_user_id' => '6006']);
+        // The test client's default request IP is 127.0.0.1.
+        $device = AttendanceDevice::create(['name' => 'Gate', 'serial_number' => 'SN-TEST-7', 'ip' => '127.0.0.1', 'status' => 'active']);
+
+        $response = $this->call('POST', '/iclock/cdata?SN=SN-TEST-7&table=ATTLOG', [], [], [], [], "6006\t2026-09-07 09:00:00\t0");
+
+        $response->assertOk();
+        $this->assertSame('OK: 1', $response->getContent());
+        $this->assertSame(1, $user->attendances()->count());
+    }
 }

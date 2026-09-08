@@ -47,10 +47,18 @@ class CheckInCheckOutTest extends TestCase
     {
         $user = User::create(['name' => 'Carol']);
 
-        // A bad early device punch, then an admin's correct manual one —
-        // the manual entry must win as "first in", not the earlier device one.
-        $user->checkIn(['time' => '2026-09-07 06:00:00', 'source' => 'device', 'is_manual' => false]);
-        $user->checkIn(['time' => '2026-09-07 09:05:00', 'source' => 'manual', 'is_manual' => true]);
+        // A bad early device punch — created directly via the relation
+        // the way real device sync does it (AttendanceDeviceSyncService
+        // never goes through checkIn()/checkOut()'s public API, and
+        // recordPunch() no longer accepts 'source'/'is_manual' overrides
+        // through that API — see HasAttendance::PUNCH_ATTRIBUTE_ALLOWLIST).
+        $user->attendances()->create([
+            'time' => '2026-09-07 06:00:00', 'type' => 'check_in',
+            'source' => 'device', 'is_manual' => false,
+        ]);
+        // ...then an admin's correct manual one — the manual entry must
+        // win as "first in", not the earlier device one.
+        $user->checkIn(['time' => '2026-09-07 09:05:00']);
 
         $window = $user->attendanceOn('2026-09-07');
 

@@ -13,6 +13,9 @@
 | middleware group, so there's no session/CSRF handling in the way (a
 | device can't carry either) — nothing to configure in bootstrap/app.php
 | for this to work, unlike a plain routes/web.php registration would need.
+| `throttle` (see config('attendance.device_sync.adms_throttle')) is
+| still applied — it doesn't need a session, and this is the one guard
+| against a flood of requests these public, unauthenticated routes have.
 |
 */
 

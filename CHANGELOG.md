@@ -4,6 +4,19 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Security
+- **ADMS push hardening.** These routes are public and unauthenticated by protocol necessity (a device carries nothing but its serial number), so three mitigations on top of that: an optional `config('attendance.device_sync.adms_verify_ip')` (off by default) rejects a push whose source IP doesn't match the device's registered `ip`; `throttle` middleware (`adms_throttle`, default `throttle:60,1`) is now applied to all four ADMS routes — previously none; a single push batch is capped at `adms_max_lines_per_push` (default 5000) ATTLOG lines, logging and dropping the remainder instead of processing an unbounded body.
+- **CSV export formula-injection guard.** A cell whose value starts with `=`, `+`, `-`, or `@` (a name or note field, say) now gets a leading apostrophe in every CSV export — without it, opening the file in Excel/Sheets would execute that cell as a live formula. See `Http\Controllers\Concerns\ExportsCsv::escapeCsvFormula()`.
+- **`HasAttendance::checkIn()`/`checkOut()` no longer accept arbitrary attribute overrides.** Only `time` and `meta` pass through to the created `Attendance` row now (`PUNCH_ATTRIBUTE_ALLOWLIST`) — previously a caller could pass `type`/`source`/`is_manual`/`device_id` and have them silently override what the method itself computes, a footgun for any downstream controller that naively forwards `$request->all()` into this public API.
+
+### Changed
+- `AttendanceSummaryService::buildForDate()` no longer re-queries `Holiday::onDate($date)` once per employee — resolved once per call and passed into `buildOne()`, whose signature grew an optional third `$holiday` parameter (fully backward compatible: omit it and `buildOne()` resolves the holiday itself, exactly as before).
+- New index on `employees.status` — the `?status=` filter and `AttendanceSummaryService::buildForDate()`'s own `where('status', 'active')` were both unindexed equality lookups.
+- Full suite grew to 71 tests / 207 assertions covering all of the above.
+
+### Upgrade note
+The three new `device_sync.adms_*` keys are nested inside the existing `device_sync` config array — if you've already run `php artisan vendor:publish --tag=attendance-config`, your published copy won't pick them up automatically (Laravel's config merge only fills in a *missing top-level* key, not a missing key nested inside one you already have). Either delete your published `config/attendance.php` and let the package's default merge back in, or add the three `adms_*` keys to your copy by hand — see `config/attendance.php` in the package for their defaults.
+
 ## [2.0.0] - 2026-09-08
 
 ### Changed

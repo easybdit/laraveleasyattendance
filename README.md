@@ -250,6 +250,8 @@ Use this when your server *can't* reach the device directly (remote site, no sta
    ```
 5. **Now query the data** — populated automatically as the device pushes, no action needed on your end once step 2 is configured correctly.
 
+**Security note:** a device firmware can't carry anything beyond its serial number, so that's the main gate on these routes by protocol necessity — they're public and unauthenticated. Three mitigations ship on top of that: `throttle` middleware on all four routes (`config('attendance.device_sync.adms_throttle')`, default `throttle:60,1`), a cap on how many ATTLOG lines one push batch can contain (`adms_max_lines_per_push`, default 5000 — the rest is logged and dropped, not queued), and an optional IP check (`adms_verify_ip`, off by default since many push devices sit behind NAT/a dynamic IP) that rejects a push whose source IP doesn't match the device's registered `ip` column when one is set.
+
 ### Viewing synced data
 
 Regardless of which mode filled it in, synced punches are ordinary `Attendance` rows (`source: 'device'`) on the matched subject — query them the same way as manual punches:
@@ -574,6 +576,9 @@ Set it **before your first `php artisan migrate`** — every migration and every
 | `device_sync.pin_column` | `device_user_id` | Column on the subject model's table holding the device PIN |
 | `device_sync.online_threshold_seconds` | `90` | How recently a push device must have been seen to count "online" |
 | `device_sync.notify_after_failures` / `notify_every` | `2` / `5` | `AttendanceDeviceSyncFailed` escalation schedule |
+| `device_sync.adms_verify_ip` | `false` | Reject an ADMS push whose source IP doesn't match the device's registered `ip` |
+| `device_sync.adms_throttle` | `throttle:60,1` | Rate limit applied to all four ADMS routes |
+| `device_sync.adms_max_lines_per_push` | `5000` | Cap on ATTLOG lines processed from one push batch |
 | `default_shift` | 09:00–18:00, 15min grace, Friday off | Fallback used by `ShiftResolver` when no roster entry covers a date |
 | `salary.working_days_per_month` | `30` | Divides `basic_salary` into a per-day rate for deductions |
 | `salary.late_deduction_ratio` | `3` | Every Nth late day docks one more day's pay |

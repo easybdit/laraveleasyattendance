@@ -145,6 +145,36 @@ return [
         // silent either. Listen for the event to notify however you like.
         'notify_after_failures' => 2,
         'notify_every' => 5,
+
+        // ADMS push (Mode B) hardening — see the README's "ZKTeco
+        // Biometric Attendance & Device Sync" section. The device
+        // firmware itself can't carry any auth beyond its serial number,
+        // so these three are the package's own mitigations on top of that.
+        //
+        // adms_verify_ip: reject a push whose source IP doesn't match the
+        // device's registered `ip` column, when one is set. Off by
+        // default — most push devices sit behind NAT/a dynamic IP or a
+        // reverse proxy that changes the source address, which is exactly
+        // why push mode exists; only turn this on if you know the
+        // device's IP is stable and reaches you directly.
+        'adms_verify_ip' => env('ATTENDANCE_ADMS_VERIFY_IP', false),
+
+        // adms_throttle: rate limit applied to all four ADMS routes
+        // (Laravel's inline `throttle:max,minutes` syntax — no named
+        // limiter to register). These routes are public and
+        // unauthenticated by protocol necessity, so this is the one
+        // built-in guard against a flood of requests. A real device
+        // polls every ~30s; 60/min comfortably covers that with room to
+        // spare, tighten it if you have very few devices.
+        'adms_throttle' => env('ATTENDANCE_ADMS_THROTTLE', 'throttle:60,1'),
+
+        // adms_max_lines_per_push: a single push batch is capped at this
+        // many ATTLOG lines — anything beyond is logged and dropped
+        // rather than processed, so a malformed or oversized POST body
+        // can't turn into an unbounded amount of work per request. A real
+        // device's backlog between syncs is realistically in the
+        // hundreds, not tens of thousands.
+        'adms_max_lines_per_push' => env('ATTENDANCE_ADMS_MAX_LINES_PER_PUSH', 5000),
     ],
 
     /*

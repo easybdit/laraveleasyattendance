@@ -24,8 +24,14 @@ class AttendanceSummaryService
     {
         $built = 0;
 
-        Employee::where('status', 'active')->each(function (Employee $employee) use ($date, &$built) {
-            $this->buildOne($employee, $date);
+        // Resolved once, not once per employee — Holiday::onDate($date)
+        // returns the same row for every employee on a given date, so
+        // re-querying it inside the loop below would be a pure duplicate
+        // query per employee for no reason (real cost on a large roster).
+        $holiday = Holiday::onDate($date);
+
+        Employee::where('status', 'active')->each(function (Employee $employee) use ($date, $holiday, &$built) {
+            $this->buildOne($employee, $date, $holiday);
             $built++;
         });
 
@@ -42,10 +48,16 @@ class AttendanceSummaryService
         }
     }
 
-    public function buildOne(Employee $employee, string $date): AttendanceSummary
+    /**
+     * $holiday: pass the already-resolved Holiday (or null) when the
+     * caller already knows it for this $date — e.g. buildForDate() looping
+     * many employees over the same date — to skip a redundant lookup.
+     * `false` (the default) means "not supplied, resolve it here".
+     */
+    public function buildOne(Employee $employee, string $date, Holiday|false|null $holiday = false): AttendanceSummary
     {
         $shiftInfo = (new ShiftResolver)->resolve($employee, $date);
-        $holiday = Holiday::onDate($date);
+        $holiday = $holiday === false ? Holiday::onDate($date) : $holiday;
         $onLeave = Leave::covers($employee->id, $date);
 
         $punches = $employee->attendances()->whereDate('time', $date)->orderBy('time')->get();

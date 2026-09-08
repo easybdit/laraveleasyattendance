@@ -73,11 +73,15 @@ class LaravelEasyAttendanceServiceProvider extends ServiceProvider
     }
 
     /**
-     * Deliberately registered with NO middleware group at all — not even
-     * 'web' — because a ZK device can't carry a session or a CSRF token.
-     * Skipping 'web' means Laravel's CSRF middleware never sees these
-     * routes in the first place, so (unlike routes/web.php-based ADMS
-     * receivers elsewhere) there's nothing to exempt in bootstrap/app.php.
+     * Deliberately registered with NO 'web' middleware — a ZK device
+     * can't carry a session or a CSRF token, so skipping 'web' means
+     * Laravel's CSRF middleware never sees these routes in the first
+     * place (unlike routes/web.php-based ADMS receivers elsewhere,
+     * nothing to exempt in bootstrap/app.php for this to work). `throttle`
+     * doesn't need a session either, so it's the one middleware still
+     * applied — see config('attendance.device_sync.adms_throttle'): these
+     * routes are public and unauthenticated by protocol necessity, so
+     * rate limiting is the one built-in guard against a request flood.
      */
     protected function registerAdmsRoutes(): void
     {
@@ -85,6 +89,7 @@ class LaravelEasyAttendanceServiceProvider extends ServiceProvider
             return;
         }
 
-        Route::group([], __DIR__.'/../routes/adms.php');
+        Route::middleware(config('attendance.device_sync.adms_throttle', 'throttle:60,1'))
+            ->group(__DIR__.'/../routes/adms.php');
     }
 }

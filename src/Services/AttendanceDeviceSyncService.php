@@ -8,6 +8,7 @@ use Easybdit\LaravelEasyAttendance\Models\Attendance;
 use Easybdit\LaravelEasyAttendance\Models\AttendanceDevice;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Shared ingestion logic for both sync directions:
@@ -79,6 +80,20 @@ class AttendanceDeviceSyncService
      */
     public function ingestPush(AttendanceDevice $device, array $rawLines): int
     {
+        // A real device's backlog between syncs is realistically in the
+        // hundreds, not tens of thousands — cap what one push batch can
+        // make this endpoint do, since it's public and unauthenticated by
+        // protocol necessity (see AdmsPushController). Anything past the
+        // limit is dropped, not queued for later — the device resends
+        // whatever we don't acknowledge, so the remainder isn't lost.
+        $maxLines = (int) config('attendance.device_sync.adms_max_lines_per_push', 5000);
+        if (count($rawLines) > $maxLines) {
+            Log::warning('ADMS push exceeded max lines per batch, truncating', [
+                'device_id' => $device->id, 'received' => count($rawLines), 'max' => $maxLines,
+            ]);
+            $rawLines = array_slice($rawLines, 0, $maxLines);
+        }
+
         $lines = [];
         foreach ($rawLines as $line) {
             if (trim($line) === '') {
