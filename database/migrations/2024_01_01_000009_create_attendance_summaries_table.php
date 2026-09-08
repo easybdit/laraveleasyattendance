@@ -12,9 +12,9 @@ return new class extends Migration
             return;
         }
 
-        Schema::create('attendance_summaries', function (Blueprint $table) {
+        Schema::create(config('attendance.table_names.attendance_summaries', 'easyattendance_summaries'), function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
+            $table->foreignId('employee_id')->constrained(config('attendance.table_names.employees', 'easyattendance_employees'))->cascadeOnDelete();
             $table->date('date');
             $table->unsignedBigInteger('shift_id')->nullable();
 
@@ -38,7 +38,8 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->unique(['employee_id', 'date']);
+            // Named explicitly — see the note in the shifts migration.
+            $table->unique(['employee_id', 'date'], 'ea_summaries_employee_date_uq');
             $table->index('date');
             $table->index('status');
         });
@@ -46,6 +47,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('attendance_summaries');
+        Schema::dropIfExists(config('attendance.table_names.attendance_summaries', 'easyattendance_summaries'));
     }
 };

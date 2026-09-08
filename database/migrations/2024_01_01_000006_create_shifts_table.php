@@ -12,7 +12,7 @@ return new class extends Migration
             return;
         }
 
-        Schema::create('shifts', function (Blueprint $table) {
+        Schema::create(config('attendance.table_names.shifts', 'easyattendance_shifts'), function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->time('start_time');
@@ -23,21 +23,24 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('employee_shifts', function (Blueprint $table) {
+        Schema::create(config('attendance.table_names.employee_shifts', 'easyattendance_employee_shifts'), function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
-            $table->foreignId('shift_id')->constrained('shifts')->cascadeOnDelete();
+            $table->foreignId('employee_id')->constrained(config('attendance.table_names.employees', 'easyattendance_employees'))->cascadeOnDelete();
+            $table->foreignId('shift_id')->constrained(config('attendance.table_names.shifts', 'easyattendance_shifts'))->cascadeOnDelete();
             $table->date('start_date');
             $table->date('end_date')->nullable(); // null = open-ended, still current
             $table->timestamps();
 
-            $table->index(['employee_id', 'start_date', 'end_date']);
+            // Named explicitly — the auto-generated name overflows MySQL's
+            // 64-char identifier limit once the easyattendance_ prefix is
+            // applied (see config('attendance.table_names')).
+            $table->index(['employee_id', 'start_date', 'end_date'], 'ea_employee_shifts_range_idx');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('employee_shifts');
-        Schema::dropIfExists('shifts');
+        Schema::dropIfExists(config('attendance.table_names.employee_shifts', 'easyattendance_employee_shifts'));
+        Schema::dropIfExists(config('attendance.table_names.shifts', 'easyattendance_shifts'));
     }
 };

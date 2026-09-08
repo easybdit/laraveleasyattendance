@@ -78,6 +78,7 @@ Laravel Easy Attendance can be used for:
   - [Overtime + special working day, worked example](#overtime--special-working-day-worked-example)
 - [Exports, bulk import, notifications & print views](#exports-bulk-import-notifications--print-views)
   - [Localization](#localization)
+- [Table names](#table-names)
 - [Configuration reference](#configuration-reference)
 - [Routes reference](#routes-reference)
 - [Tested against real devices](#tested-against-real-devices)
@@ -539,6 +540,22 @@ __('attendance::notifications.late.subject', ['name' => $employee->name]);
 __('attendance::attendance.status_short.present'); // 'P'
 ```
 
+## Table names
+
+Every table this package owns is prefixed `easyattendance_` by default (`easyattendance_employees`, `easyattendance_shifts`, `easyattendance_leaves`, ...) — a generic-sounding name like "employees" or "leaves" is exactly the kind of table your app, or another package, might already have, so this package never installs one unprefixed.
+
+If you still hit a conflict, or want the package to read a table you already have, override just that one entry in `config('attendance.table_names')` — same shape as [spatie/laravel-permission](https://github.com/spatie/laravel-permission)'s `table_names` config, so nothing new to learn if you've used that:
+
+```php
+// config/attendance.php
+'table_names' => [
+    'employees' => 'hr_employees', // only this one renamed, everything else stays default
+    // ...
+],
+```
+
+Set it **before your first `php artisan migrate`** — every migration and every model reads from this same config, so changing a value here is all it takes; no model or migration file to touch yourself. Renaming a table after you've already migrated needs a real migration on your end (rename the table, update the config to match).
+
 ## Configuration reference
 
 `config/attendance.php`, after `php artisan vendor:publish --tag=attendance-config`:
@@ -546,6 +563,7 @@ __('attendance::attendance.status_short.present'); // 'P'
 | Key | Default | Purpose |
 |---|---|---|
 | `subject_model` | your auth user model | The model attendance belongs to |
+| `table_names` | `easyattendance_*` for every table | Per-table override — see [Table names](#table-names) |
 | `routes.enabled` | `true` | Turn off the built-in HTTP routes entirely |
 | `routes.prefix` | `attendance` | URL prefix for all routes |
 | `routes.middleware` | `['web','auth']` | Applied to every route below the prefix |

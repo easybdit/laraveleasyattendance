@@ -4,10 +4,12 @@ namespace Easybdit\LaravelEasyAttendance\Http\Controllers;
 
 use Easybdit\LaravelEasyAttendance\Models\Employee;
 use Easybdit\LaravelEasyAttendance\Models\Leave;
+use Easybdit\LaravelEasyAttendance\Models\LeaveType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 /**
  * Nested under an explicit {employee} rather than "my leaves" — Leave
@@ -28,7 +30,7 @@ class LeaveController extends Controller
     public function store(Request $request, Employee $employee): JsonResponse
     {
         $data = $request->validate([
-            'leave_type_id' => ['nullable', 'exists:leave_types,id'],
+            'leave_type_id' => ['nullable', Rule::exists(LeaveType::class, 'id')],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'reason' => ['nullable', 'string', 'max:1000'],

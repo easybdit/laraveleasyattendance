@@ -12,7 +12,7 @@ return new class extends Migration
             return;
         }
 
-        Schema::create('holidays', function (Blueprint $table) {
+        Schema::create(config('attendance.table_names.holidays', 'easyattendance_holidays'), function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->date('date');
@@ -27,6 +27,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('holidays');
+        Schema::dropIfExists(config('attendance.table_names.holidays', 'easyattendance_holidays'));
     }
 };

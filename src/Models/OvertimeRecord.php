@@ -3,10 +3,18 @@
 namespace Easybdit\LaravelEasyAttendance\Models;
 
 use Easybdit\LaravelEasyAttendance\Events\OvertimeReviewed;
+use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 
 class OvertimeRecord extends Model
 {
+    use HasPackageTable;
+
+    protected function tableConfigKey(): string
+    {
+        return 'overtime_records';
+    }
+
     protected $fillable = [
         'employee_id', 'date', 'shift_end_time', 'actual_out_time',
         'ot_hours', 'ot_rate', 'ot_amount', 'source', 'status',

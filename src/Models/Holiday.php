@@ -3,10 +3,18 @@
 namespace Easybdit\LaravelEasyAttendance\Models;
 
 use Carbon\Carbon;
+use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 
 class Holiday extends Model
 {
+    use HasPackageTable;
+
+    protected function tableConfigKey(): string
+    {
+        return 'holidays';
+    }
+
     protected $fillable = ['name', 'date', 'is_recurring_yearly'];
 
     protected $casts = [

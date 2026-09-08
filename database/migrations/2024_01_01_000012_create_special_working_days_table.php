@@ -12,9 +12,9 @@ return new class extends Migration
             return;
         }
 
-        Schema::create('special_working_days', function (Blueprint $table) {
+        Schema::create(config('attendance.table_names.special_working_days', 'easyattendance_special_working_days'), function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
+            $table->foreignId('employee_id')->constrained(config('attendance.table_names.employees', 'easyattendance_employees'))->cascadeOnDelete();
             $table->date('date');
             // Auto-set on save from the date itself — see SpecialWorkingDay::booted().
             $table->enum('type', ['day_off', 'holiday', 'other'])->default('other');
@@ -23,12 +23,13 @@ return new class extends Migration
             $table->string('note')->nullable();
             $table->timestamps();
 
-            $table->unique(['employee_id', 'date']);
+            // Named explicitly — see the note in the shifts migration.
+            $table->unique(['employee_id', 'date'], 'ea_special_working_days_employee_date_uq');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('special_working_days');
+        Schema::dropIfExists(config('attendance.table_names.special_working_days', 'easyattendance_special_working_days'));
     }
 };

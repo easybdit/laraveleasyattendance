@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('attendances', function (Blueprint $table) {
+        Schema::create(config('attendance.table_names.attendances', 'easyattendance_attendances'), function (Blueprint $table) {
             $table->id();
 
             // Polymorphic so this works against ANY subject model
@@ -23,12 +23,15 @@ return new class extends Migration
             $table->json('meta')->nullable(); // free-form: device id, ip, note, ...
             $table->timestamps();
 
-            $table->index(['subject_type', 'subject_id', 'time']);
+            // Named explicitly — the auto-generated {table}_{cols}_index
+            // name can exceed MySQL's 64-char identifier limit once a
+            // custom table_names prefix is applied (see config file).
+            $table->index(['subject_type', 'subject_id', 'time'], 'ea_attendances_subject_time_idx');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('attendances');
+        Schema::dropIfExists(config('attendance.table_names.attendances', 'easyattendance_attendances'));
     }
 };

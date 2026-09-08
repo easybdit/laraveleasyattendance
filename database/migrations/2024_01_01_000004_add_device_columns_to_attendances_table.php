@@ -12,7 +12,7 @@ return new class extends Migration
             return;
         }
 
-        Schema::table('attendances', function (Blueprint $table) {
+        Schema::table(config('attendance.table_names.attendances', 'easyattendance_attendances'), function (Blueprint $table) {
             $table->unsignedBigInteger('device_id')->nullable()->after('subject_id');
             $table->string('device_user_id')->nullable()->after('device_id'); // raw PIN from the device
 
@@ -25,7 +25,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('attendances', function (Blueprint $table) {
+        Schema::table(config('attendance.table_names.attendances', 'easyattendance_attendances'), function (Blueprint $table) {
             $table->dropUnique('attendances_device_punch_unique');
             $table->dropColumn(['device_id', 'device_user_id']);
         });

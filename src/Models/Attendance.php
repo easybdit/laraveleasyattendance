@@ -2,11 +2,19 @@
 
 namespace Easybdit\LaravelEasyAttendance\Models;
 
+use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 class Attendance extends Model
 {
+    use HasPackageTable;
+
+    protected function tableConfigKey(): string
+    {
+        return 'attendances';
+    }
+
     protected $fillable = [
         'subject_type', 'subject_id',
         'time', 'type', 'source', 'is_manual', 'meta',

@@ -12,18 +12,18 @@ return new class extends Migration
             return;
         }
 
-        Schema::create('departments', function (Blueprint $table) {
+        Schema::create(config('attendance.table_names.departments', 'easyattendance_departments'), function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('description')->nullable();
             $table->timestamps();
         });
 
-        Schema::create('designations', function (Blueprint $table) {
+        Schema::create(config('attendance.table_names.designations', 'easyattendance_designations'), function (Blueprint $table) {
             $table->id();
             // Nullable — a designation can be org-wide (e.g. "Manager")
             // rather than tied to one department.
-            $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('department_id')->nullable()->constrained(config('attendance.table_names.departments', 'easyattendance_departments'))->nullOnDelete();
             $table->string('name');
             $table->timestamps();
         });
@@ -31,7 +31,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('designations');
-        Schema::dropIfExists('departments');
+        Schema::dropIfExists(config('attendance.table_names.designations', 'easyattendance_designations'));
+        Schema::dropIfExists(config('attendance.table_names.departments', 'easyattendance_departments'));
     }
 };

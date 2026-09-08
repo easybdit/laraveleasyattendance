@@ -2,11 +2,17 @@
 
 namespace Easybdit\LaravelEasyAttendance\Models;
 
+use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 
 class AttendanceDevice extends Model
 {
-    protected $table = 'attendance_devices';
+    use HasPackageTable;
+
+    protected function tableConfigKey(): string
+    {
+        return 'attendance_devices';
+    }
 
     protected $fillable = [
         'name', 'ip', 'port', 'comm_key', 'serial_number',

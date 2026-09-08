@@ -12,18 +12,18 @@ return new class extends Migration
             return;
         }
 
-        Schema::table('employees', function (Blueprint $table) {
+        Schema::table(config('attendance.table_names.employees', 'easyattendance_employees'), function (Blueprint $table) {
             // Alongside, not replacing, the existing plain `designation`
             // string column — that stays for anyone who just wants free
             // text without setting up the Department/Designation models.
-            $table->foreignId('department_id')->nullable()->after('designation')->constrained()->nullOnDelete();
-            $table->foreignId('designation_id')->nullable()->after('department_id')->constrained()->nullOnDelete();
+            $table->foreignId('department_id')->nullable()->after('designation')->constrained(config('attendance.table_names.departments', 'easyattendance_departments'))->nullOnDelete();
+            $table->foreignId('designation_id')->nullable()->after('department_id')->constrained(config('attendance.table_names.designations', 'easyattendance_designations'))->nullOnDelete();
         });
     }
 
     public function down(): void
     {
-        Schema::table('employees', function (Blueprint $table) {
+        Schema::table(config('attendance.table_names.employees', 'easyattendance_employees'), function (Blueprint $table) {
             $table->dropConstrainedForeignId('department_id');
             $table->dropConstrainedForeignId('designation_id');
         });

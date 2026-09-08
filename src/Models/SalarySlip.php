@@ -2,10 +2,18 @@
 
 namespace Easybdit\LaravelEasyAttendance\Models;
 
+use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 
 class SalarySlip extends Model
 {
+    use HasPackageTable;
+
+    protected function tableConfigKey(): string
+    {
+        return 'salary_slips';
+    }
+
     protected $fillable = [
         'employee_id', 'year', 'month', 'basic_salary', 'allowances',
         'present_days', 'absent_days', 'late_days', 'leave_days',

@@ -4,6 +4,16 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-08
+
+### Changed
+- **BREAKING: every package table is now prefixed `easyattendance_`.** `employees`, `shifts`, `employee_shifts`, `holidays`, `leave_types`, `leaves`, `salary_slips`, `overtime_records`, `special_working_days`, `departments`, `designations` are exactly the kind of generic table names a host app (or another package) is likely to already have — this closes that collision risk for good, and brings the other four tables (`attendances`, `attendance_corrections`, `attendance_devices`, `attendance_summaries`, previously `attendance_`-prefixed only) in line with the same convention. Every table name is individually overridable via the new `config('attendance.table_names')` array — same shape as `spatie/laravel-permission`'s `table_names` config — see the README's new [Table names](README.md#table-names) section. Shipped as a major version, on the very first day of `v1.0.0`, specifically because the real-world cost of breaking this now (4 Packagist installs) is essentially zero compared to doing it later against real user data.
+  - **Upgrading:** there is no automatic migration — this only matters if you've already run `php artisan migrate` on `v1.x`. Either start fresh (`php artisan migrate:fresh`, only safe if you don't need to keep existing data), or write your own migration renaming each old table to its new `easyattendance_*` name (see `config/attendance.php` for the full old-name → new-name map) before upgrading the package.
+  - Every model now resolves its table via the new `Models\Concerns\HasPackageTable` trait instead of Eloquent's default naming convention; every migration's `Schema::create()`/`constrained()` calls read the same `table_names` config.
+  - Validation rules that referenced a table by raw string (`unique:employees,...`, `exists:departments,id`) now use `Rule::unique(Employee::class, ...)`/`Rule::exists(Department::class, ...)` instead, so they keep resolving correctly regardless of what `table_names` is set to.
+  - A few composite indexes/unique constraints (`employee_shifts`, `leaves`, `salary_slips`, `overtime_records`, `special_working_days`, and the two `attendances`/`attendance_corrections` subject indexes) now have an explicit short name instead of Laravel's auto-generated `{table}_{columns}_index` — the auto-generated name for `employee_shifts`' composite index exceeded MySQL's 64-character identifier limit once the longer prefix was applied, and an explicit name keeps every index safe regardless of how long a custom `table_names` override might be.
+- Full suite (67 tests / 196 assertions) green against MySQL with the new prefixed tables.
+
 ## [1.0.0] - 2026-09-08
 
 First stable release. Semantic Versioning applies from here on — see the policy note at the top of this file.

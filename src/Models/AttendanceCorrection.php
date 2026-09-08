@@ -4,10 +4,18 @@ namespace Easybdit\LaravelEasyAttendance\Models;
 
 use Easybdit\LaravelEasyAttendance\Events\AttendanceCorrectionReviewed;
 use Easybdit\LaravelEasyAttendance\Events\AttendanceRecorded;
+use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 
 class AttendanceCorrection extends Model
 {
+    use HasPackageTable;
+
+    protected function tableConfigKey(): string
+    {
+        return 'attendance_corrections';
+    }
+
     protected $fillable = [
         'subject_type', 'subject_id', 'submitted_by',
         'date', 'requested_in', 'requested_out', 'reason',

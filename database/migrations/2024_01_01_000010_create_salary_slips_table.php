@@ -12,9 +12,9 @@ return new class extends Migration
             return;
         }
 
-        Schema::create('salary_slips', function (Blueprint $table) {
+        Schema::create(config('attendance.table_names.salary_slips', 'easyattendance_salary_slips'), function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
+            $table->foreignId('employee_id')->constrained(config('attendance.table_names.employees', 'easyattendance_employees'))->cascadeOnDelete();
             $table->unsignedSmallInteger('year');
             $table->unsignedTinyInteger('month');
 
@@ -34,12 +34,13 @@ return new class extends Migration
             $table->timestamp('generated_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['employee_id', 'year', 'month']);
+            // Named explicitly — see the note in the shifts migration.
+            $table->unique(['employee_id', 'year', 'month'], 'ea_salary_slips_employee_period_uq');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('salary_slips');
+        Schema::dropIfExists(config('attendance.table_names.salary_slips', 'easyattendance_salary_slips'));
     }
 };

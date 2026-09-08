@@ -17,6 +17,41 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Table names
+    |--------------------------------------------------------------------------
+    |
+    | Every table this package owns, prefixed `easyattendance_` by default
+    | so a generic-sounding name like "employees" or "leaves" can't collide
+    | with a table your app (or another package) already has. Override any
+    | one of these if you still hit a conflict, or want the package to read
+    | an existing table instead — same shape as spatie/laravel-permission's
+    | `table_names` config, so nothing new to learn if you've used that.
+    | Every model resolves its table from here (see Models/Concerns/HasPackageTable),
+    | and every migration's Schema::create()/constrained() calls read the
+    | same array, so changing a value here before your first `migrate` is
+    | all it takes — no need to touch a model or migration yourself.
+    |
+    */
+    'table_names' => [
+        'attendances' => 'easyattendance_attendances',
+        'attendance_corrections' => 'easyattendance_corrections',
+        'attendance_devices' => 'easyattendance_devices',
+        'attendance_summaries' => 'easyattendance_summaries',
+        'employees' => 'easyattendance_employees',
+        'employee_shifts' => 'easyattendance_employee_shifts',
+        'shifts' => 'easyattendance_shifts',
+        'holidays' => 'easyattendance_holidays',
+        'leave_types' => 'easyattendance_leave_types',
+        'leaves' => 'easyattendance_leaves',
+        'salary_slips' => 'easyattendance_salary_slips',
+        'overtime_records' => 'easyattendance_overtime_records',
+        'special_working_days' => 'easyattendance_special_working_days',
+        'departments' => 'easyattendance_departments',
+        'designations' => 'easyattendance_designations',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Route registration
     |--------------------------------------------------------------------------
     */

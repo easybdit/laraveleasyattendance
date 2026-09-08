@@ -12,7 +12,7 @@ return new class extends Migration
             return;
         }
 
-        Schema::create('attendance_corrections', function (Blueprint $table) {
+        Schema::create(config('attendance.table_names.attendance_corrections', 'easyattendance_corrections'), function (Blueprint $table) {
             $table->id();
             $table->morphs('subject');
 
@@ -30,12 +30,13 @@ return new class extends Migration
             $table->text('review_note')->nullable();
             $table->timestamps();
 
-            $table->index(['subject_type', 'subject_id', 'status']);
+            // Named explicitly — see the same note in the attendances migration.
+            $table->index(['subject_type', 'subject_id', 'status'], 'ea_corrections_subject_status_idx');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('attendance_corrections');
+        Schema::dropIfExists(config('attendance.table_names.attendance_corrections', 'easyattendance_corrections'));
     }
 };

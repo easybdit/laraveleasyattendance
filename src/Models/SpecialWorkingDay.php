@@ -2,6 +2,7 @@
 
 namespace Easybdit\LaravelEasyAttendance\Models;
 
+use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Easybdit\LaravelEasyAttendance\Support\ShiftResolver;
 use Illuminate\Database\Eloquent\Model;
 
@@ -13,6 +14,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class SpecialWorkingDay extends Model
 {
+    use HasPackageTable;
+
+    protected function tableConfigKey(): string
+    {
+        return 'special_working_days';
+    }
+
     protected $fillable = ['employee_id', 'date', 'type', 'is_payable', 'payment_amount', 'note'];
 
     protected $casts = [

@@ -3,11 +3,15 @@
 namespace Easybdit\LaravelEasyAttendance\Http\Controllers;
 
 use Easybdit\LaravelEasyAttendance\Http\Controllers\Concerns\Paginatable;
+use Easybdit\LaravelEasyAttendance\Models\Department;
+use Easybdit\LaravelEasyAttendance\Models\Designation;
 use Easybdit\LaravelEasyAttendance\Models\Employee;
+use Easybdit\LaravelEasyAttendance\Models\Shift;
 use Easybdit\LaravelEasyAttendance\Services\EmployeeCsvImporter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Validation\Rule;
 
 class EmployeeController extends Controller
 {
@@ -72,7 +76,7 @@ class EmployeeController extends Controller
     public function assignSchedule(Request $request, Employee $employee): JsonResponse
     {
         $data = $request->validate([
-            'shift_id' => ['required', 'exists:shifts,id'],
+            'shift_id' => ['required', Rule::exists(Shift::class, 'id')],
             'start_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
         ]);
@@ -101,14 +105,14 @@ class EmployeeController extends Controller
     protected function validated(Request $request, ?int $ignoreId = null): array
     {
         return $request->validate([
-            'employee_code' => ['required', 'string', 'max:50', 'unique:employees,employee_code'.($ignoreId ? ",{$ignoreId}" : '')],
+            'employee_code' => ['required', 'string', 'max:50', Rule::unique(Employee::class, 'employee_code')->ignore($ignoreId)],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
             'designation' => ['nullable', 'string', 'max:100'],
-            'department_id' => ['nullable', 'exists:departments,id'],
-            'designation_id' => ['nullable', 'exists:designations,id'],
-            'device_user_id' => ['nullable', 'string', 'max:50', 'unique:employees,device_user_id'.($ignoreId ? ",{$ignoreId}" : '')],
+            'department_id' => ['nullable', Rule::exists(Department::class, 'id')],
+            'designation_id' => ['nullable', Rule::exists(Designation::class, 'id')],
+            'device_user_id' => ['nullable', 'string', 'max:50', Rule::unique(Employee::class, 'device_user_id')->ignore($ignoreId)],
             'basic_salary' => ['required', 'numeric', 'min:0'],
             'allowances' => ['nullable', 'array'],
             'joined_at' => ['nullable', 'date'],

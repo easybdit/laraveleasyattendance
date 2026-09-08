@@ -2,6 +2,7 @@
 
 namespace Easybdit\LaravelEasyAttendance\Models;
 
+use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -11,6 +12,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class EmployeeShift extends Model
 {
+    use HasPackageTable;
+
+    protected function tableConfigKey(): string
+    {
+        return 'employee_shifts';
+    }
+
     protected $fillable = ['employee_id', 'shift_id', 'start_date', 'end_date'];
 
     protected $casts = [

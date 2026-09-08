@@ -5,6 +5,7 @@ namespace Easybdit\LaravelEasyAttendance\Services;
 use Easybdit\LaravelEasyAttendance\Models\Employee;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 /**
  * Plain PHP fgetcsv() — no maatwebsite/excel or PhpSpreadsheet needed to
@@ -54,10 +55,10 @@ class EmployeeCsvImporter
             $data = $this->rowToAttributes($header, $line);
 
             $validator = Validator::make($data['attributes'], [
-                'employee_code' => ['required', 'string', 'max:50', 'unique:employees,employee_code'],
+                'employee_code' => ['required', 'string', 'max:50', Rule::unique(Employee::class, 'employee_code')],
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['nullable', 'email', 'max:255'],
-                'device_user_id' => ['nullable', 'string', 'max:50', 'unique:employees,device_user_id'],
+                'device_user_id' => ['nullable', 'string', 'max:50', Rule::unique(Employee::class, 'device_user_id')],
                 'basic_salary' => ['nullable', 'numeric', 'min:0'],
                 'joined_at' => ['nullable', 'date'],
                 'status' => ['nullable', 'in:active,inactive'],

@@ -12,9 +12,9 @@ return new class extends Migration
             return;
         }
 
-        Schema::create('overtime_records', function (Blueprint $table) {
+        Schema::create(config('attendance.table_names.overtime_records', 'easyattendance_overtime_records'), function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
+            $table->foreignId('employee_id')->constrained(config('attendance.table_names.employees', 'easyattendance_employees'))->cascadeOnDelete();
             $table->date('date');
 
             $table->time('shift_end_time')->nullable();
@@ -32,12 +32,13 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->unique(['employee_id', 'date']);
+            // Named explicitly — see the note in the shifts migration.
+            $table->unique(['employee_id', 'date'], 'ea_overtime_records_employee_date_uq');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('overtime_records');
+        Schema::dropIfExists(config('attendance.table_names.overtime_records', 'easyattendance_overtime_records'));
     }
 };

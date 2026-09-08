@@ -9,6 +9,7 @@ use Easybdit\LaravelEasyAttendance\Services\ZKService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Validation\Rule;
 
 class AttendanceDeviceController extends Controller
 {
@@ -81,7 +82,7 @@ class AttendanceDeviceController extends Controller
             'ip' => ['nullable', 'ip', 'required_without:serial_number'],
             'port' => ['nullable', 'integer', 'min:1', 'max:65535'],
             'comm_key' => ['nullable', 'string', 'max:20'],
-            'serial_number' => ['nullable', 'string', 'max:50', 'required_without:ip', 'unique:attendance_devices,serial_number'.($ignoreId ? ",{$ignoreId}" : '')],
+            'serial_number' => ['nullable', 'string', 'max:50', 'required_without:ip', Rule::unique(AttendanceDevice::class, 'serial_number')->ignore($ignoreId)],
             'model' => ['nullable', 'string', 'max:100'],
             'status' => ['required', 'in:active,inactive'],
         ]);

@@ -3,10 +3,12 @@
 namespace Easybdit\LaravelEasyAttendance\Http\Controllers;
 
 use Easybdit\LaravelEasyAttendance\Http\Controllers\Concerns\Paginatable;
+use Easybdit\LaravelEasyAttendance\Models\Department;
 use Easybdit\LaravelEasyAttendance\Models\Designation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Validation\Rule;
 
 class DesignationController extends Controller
 {
@@ -42,7 +44,7 @@ class DesignationController extends Controller
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'department_id' => ['nullable', 'exists:departments,id'],
+            'department_id' => ['nullable', Rule::exists(Department::class, 'id')],
         ]);
     }
 }

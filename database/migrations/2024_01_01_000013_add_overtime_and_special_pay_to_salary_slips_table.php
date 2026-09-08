@@ -12,7 +12,7 @@ return new class extends Migration
             return;
         }
 
-        Schema::table('salary_slips', function (Blueprint $table) {
+        Schema::table(config('attendance.table_names.salary_slips', 'easyattendance_salary_slips'), function (Blueprint $table) {
             $table->decimal('overtime_hours', 6, 2)->default(0)->after('leave_days');
             $table->decimal('overtime_amount', 10, 2)->default(0)->after('overtime_hours');
             $table->decimal('special_pay_amount', 10, 2)->default(0)->after('overtime_amount');
@@ -21,7 +21,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('salary_slips', function (Blueprint $table) {
+        Schema::table(config('attendance.table_names.salary_slips', 'easyattendance_salary_slips'), function (Blueprint $table) {
             $table->dropColumn(['overtime_hours', 'overtime_amount', 'special_pay_amount']);
         });
     }

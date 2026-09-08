@@ -2,6 +2,7 @@
 
 namespace Easybdit\LaravelEasyAttendance\Models;
 
+use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -12,6 +13,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class AttendanceSummary extends Model
 {
+    use HasPackageTable;
+
+    protected function tableConfigKey(): string
+    {
+        return 'attendance_summaries';
+    }
+
     protected $fillable = [
         'employee_id', 'date', 'shift_id', 'status',
         'first_in', 'last_out', 'punch_count',

@@ -2,10 +2,18 @@
 
 namespace Easybdit\LaravelEasyAttendance\Models;
 
+use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 
 class LeaveType extends Model
 {
+    use HasPackageTable;
+
+    protected function tableConfigKey(): string
+    {
+        return 'leave_types';
+    }
+
     protected $fillable = ['name', 'days_allowed_per_year'];
 
     public function leaves()

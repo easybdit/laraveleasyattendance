@@ -3,10 +3,18 @@
 namespace Easybdit\LaravelEasyAttendance\Models;
 
 use Easybdit\LaravelEasyAttendance\Events\LeaveReviewed;
+use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 
 class Leave extends Model
 {
+    use HasPackageTable;
+
+    protected function tableConfigKey(): string
+    {
+        return 'leaves';
+    }
+
     protected $fillable = [
         'employee_id', 'leave_type_id', 'start_date', 'end_date',
         'reason', 'status', 'reviewed_by', 'reviewed_at', 'review_note',

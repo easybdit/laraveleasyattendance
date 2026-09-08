@@ -3,6 +3,7 @@
 namespace Easybdit\LaravelEasyAttendance\Models;
 
 use Easybdit\LaravelEasyAttendance\Events\LeaveRequested;
+use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Easybdit\LaravelEasyAttendance\Traits\HasAttendance;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,7 +16,12 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Employee extends Model
 {
-    use HasAttendance;
+    use HasAttendance, HasPackageTable;
+
+    protected function tableConfigKey(): string
+    {
+        return 'employees';
+    }
 
     protected $fillable = [
         'employee_code', 'name', 'email', 'phone', 'designation',

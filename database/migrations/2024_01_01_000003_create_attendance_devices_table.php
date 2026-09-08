@@ -12,7 +12,7 @@ return new class extends Migration
             return;
         }
 
-        Schema::create('attendance_devices', function (Blueprint $table) {
+        Schema::create(config('attendance.table_names.attendance_devices', 'easyattendance_devices'), function (Blueprint $table) {
             $table->id();
             $table->string('name');
 
@@ -38,6 +38,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('attendance_devices');
+        Schema::dropIfExists(config('attendance.table_names.attendance_devices', 'easyattendance_devices'));
     }
 };
