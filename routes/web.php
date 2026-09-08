@@ -5,8 +5,12 @@ use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceCorrectionControll
 use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceDeviceController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceReportController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\EmployeeController;
+use Easybdit\LaravelEasyAttendance\Http\Controllers\HolidayController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\LeaveController;
+use Easybdit\LaravelEasyAttendance\Http\Controllers\LeaveTypeController;
+use Easybdit\LaravelEasyAttendance\Http\Controllers\OvertimeController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\ShiftController;
+use Easybdit\LaravelEasyAttendance\Http\Controllers\SpecialWorkingDayController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/check-in', [AttendanceController::class, 'checkIn'])->name('attendance.check-in');
@@ -51,6 +55,15 @@ if (config('attendance.features.employees', false)) {
             Route::get('/{employee}/leaves', [LeaveController::class, 'index'])->name('attendance.employees.leaves.index');
             Route::post('/{employee}/leaves', [LeaveController::class, 'store'])->name('attendance.employees.leaves.store');
         }
+
+        if (config('attendance.features.overtime', false)) {
+            Route::get('/{employee}/overtime', [OvertimeController::class, 'index'])->name('attendance.employees.overtime.index');
+        }
+
+        if (config('attendance.features.special_working_days', false)) {
+            Route::get('/{employee}/special-working-days', [SpecialWorkingDayController::class, 'index'])->name('attendance.employees.special-working-days.index');
+            Route::post('/{employee}/special-working-days', [SpecialWorkingDayController::class, 'store'])->name('attendance.employees.special-working-days.store');
+        }
     });
 
     if (config('attendance.features.leave', false)) {
@@ -59,6 +72,38 @@ if (config('attendance.features.employees', false)) {
             Route::post('/leaves/{leave}/reject', [LeaveController::class, 'reject'])->name('attendance.leaves.reject');
         });
     }
+
+    if (config('attendance.features.overtime', false)) {
+        Route::middleware(config('attendance.routes.review_middleware', ['web', 'auth']))->group(function () {
+            Route::post('/overtime/{overtime}/approve', [OvertimeController::class, 'approve'])->name('attendance.overtime.approve');
+            Route::post('/overtime/{overtime}/reject', [OvertimeController::class, 'reject'])->name('attendance.overtime.reject');
+        });
+    }
+
+    if (config('attendance.features.special_working_days', false)) {
+        Route::middleware(config('attendance.routes.review_middleware', ['web', 'auth']))->group(function () {
+            Route::put('/special-working-days/{specialWorkingDay}', [SpecialWorkingDayController::class, 'update'])->name('attendance.special-working-days.update');
+            Route::delete('/special-working-days/{specialWorkingDay}', [SpecialWorkingDayController::class, 'destroy'])->name('attendance.special-working-days.destroy');
+        });
+    }
+}
+
+if (config('attendance.features.holidays', false)) {
+    Route::middleware(config('attendance.routes.review_middleware', ['web', 'auth']))->prefix('holidays')->group(function () {
+        Route::get('/', [HolidayController::class, 'index'])->name('attendance.holidays.index');
+        Route::post('/', [HolidayController::class, 'store'])->name('attendance.holidays.store');
+        Route::put('/{holiday}', [HolidayController::class, 'update'])->name('attendance.holidays.update');
+        Route::delete('/{holiday}', [HolidayController::class, 'destroy'])->name('attendance.holidays.destroy');
+    });
+}
+
+if (config('attendance.features.leave', false)) {
+    Route::middleware(config('attendance.routes.review_middleware', ['web', 'auth']))->prefix('leave-types')->group(function () {
+        Route::get('/', [LeaveTypeController::class, 'index'])->name('attendance.leave-types.index');
+        Route::post('/', [LeaveTypeController::class, 'store'])->name('attendance.leave-types.store');
+        Route::put('/{leaveType}', [LeaveTypeController::class, 'update'])->name('attendance.leave-types.update');
+        Route::delete('/{leaveType}', [LeaveTypeController::class, 'destroy'])->name('attendance.leave-types.destroy');
+    });
 }
 
 if (config('attendance.features.shifts', false)) {

@@ -1,7 +1,7 @@
 {
     "name": "easybdit/laraveleasyattendance",
-    "description": "Drop-in attendance tracking (check-in/out, corrections, reports) for any Laravel application.",
-    "keywords": ["laravel", "attendance", "hr", "check-in", "timesheet"],
+    "description": "Drop-in attendance, HR, and payroll core for any Laravel app: check-in/out, corrections, ZKTeco device sync (pull + ADMS push), shifts, leave, holidays, overtime, salary generation, and reports.",
+    "keywords": ["laravel", "attendance", "hr", "payroll", "salary", "zkteco", "biometric", "check-in", "timesheet", "leave", "overtime"],
     "license": "MIT",
     "type": "library",
     "authors": [

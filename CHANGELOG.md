@@ -5,12 +5,18 @@ All notable changes to this project are documented here. Format follows [Keep a 
 ## [Unreleased]
 
 ### Added
-- Management HTTP endpoints for `Employee`, `Shift`, schedule (`EmployeeShift`) assignment, and `Leave` request/approve/reject — `EmployeeController`, `ShiftController`, `LeaveController`. All nested under an explicit `{employee}` (HR/admin actions, not "my own" self-service — `Employee` is a separate concept from whatever `attendance.subject_model` your `Auth::user()` is), behind `review_middleware`.
+- Management HTTP endpoints for `Employee`, `Shift`, schedule (`EmployeeShift`) assignment, `Leave`, `Holiday`, `LeaveType`, `Overtime` (approve/reject only — records are auto-detected, never created by hand), and `SpecialWorkingDay` — `EmployeeController`, `ShiftController`, `LeaveController`, `HolidayController`, `LeaveTypeController`, `OvertimeController`, `SpecialWorkingDayController`. All nested under an explicit `{employee}` where relevant (HR/admin actions, not "my own" self-service — `Employee` is a separate concept from whatever `attendance.subject_model` your `Auth::user()` is), behind `review_middleware`.
 - `LICENSE` file (MIT) — was only declared in `composer.json` before, missing the actual file GitHub/Packagist expect.
-- Test suite grew to 43 tests / 113 assertions with the new HTTP endpoints covered.
+- GitHub Actions CI (`.github/workflows/tests.yml`) — runs the suite against PHP 8.2/8.3/8.4 on every push and PR.
+- Test suite grew to 47 tests / 135 assertions with all the new HTTP endpoints covered.
+
+### Changed
+- `composer.json`'s `description`/`keywords` rewritten to reflect the full HR/payroll scope (was still the original attendance-only wording from `v0.1.0`) — this is what Packagist displays.
+
+### Published
+- **Live on Packagist as `easybdit/laraveleasyattendance`** — `composer require` now works from any project, no path-repo needed.
 
 ### Planned
-- Packagist publish
 - A pluggable shift/leave/holiday contract for teams who want summaries against their own existing roster system instead of this package's `Shift`/`EmployeeShift`
 
 ## [0.3.0] - 2026-09-07

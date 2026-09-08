@@ -1,5 +1,9 @@
 # LaravelEasyAttendance
 
+[![tests](https://github.com/easybdit/laraveleasyattendance/actions/workflows/tests.yml/badge.svg)](https://github.com/easybdit/laraveleasyattendance/actions/workflows/tests.yml)
+[![Latest Version](https://img.shields.io/packagist/v/easybdit/laraveleasyattendance.svg)](https://packagist.org/packages/easybdit/laraveleasyattendance)
+[![License](https://img.shields.io/packagist/l/easybdit/laraveleasyattendance.svg)](LICENSE)
+
 Drop-in attendance tracking for any Laravel app — check-in/out, correction requests, and ZKTeco biometric device sync (pull *and* push/ADMS) work against your existing `User` model out of the box, or any model you choose. Optionally, a full HR core layered on top: employees, shifts, schedules, holidays, leave, present/late/absent/holiday summaries, and salary generation — including overtime pay and special-working-day pay.
 
 Extracted and redesigned from a production HR system's attendance module, and validated end-to-end against real ZKTeco hardware (see [Tested against real devices](#tested-against-real-devices)).
@@ -425,8 +429,14 @@ net_salary=7433.34                   (26000 − 19933.33 + 500 + 866.67)
 | GET/POST/PUT/DELETE | `/attendance/shifts...` | `shifts`, behind `review_middleware` |
 | GET/POST | `/attendance/employees/{id}/leaves` | `employees` + `leave`, behind `review_middleware` |
 | POST | `/attendance/leaves/{id}/approve\|reject` | `leave`, behind `review_middleware` |
+| GET/POST/PUT/DELETE | `/attendance/holidays...` | `holidays`, behind `review_middleware` |
+| GET/POST/PUT/DELETE | `/attendance/leave-types...` | `leave`, behind `review_middleware` |
+| GET | `/attendance/employees/{id}/overtime` | `employees` + `overtime`, behind `review_middleware` |
+| POST | `/attendance/overtime/{id}/approve\|reject` | `overtime`, behind `review_middleware` |
+| GET/POST | `/attendance/employees/{id}/special-working-days` | `employees` + `special_working_days`, behind `review_middleware` |
+| PUT/DELETE | `/attendance/special-working-days/{id}` | `special_working_days`, behind `review_middleware` |
 
-All the employee/shift/leave routes above take an explicit `{employee}` — they're HR/admin management endpoints, not "my own" self-service, since `Employee` is a separate concept from whatever `attendance.subject_model` your `Auth::user()` actually is (see [Core concept: the subject model](#core-concept-the-subject-model)). `Holiday`/`LeaveType`/`OvertimeRecord`/`SpecialWorkingDay` still have no bundled routes — plain Eloquent models; build whatever your app/GUI needs directly against them.
+All the employee/shift/leave/overtime/special-working-day routes above take an explicit `{employee}` — they're HR/admin management endpoints, not "my own" self-service, since `Employee` is a separate concept from whatever `attendance.subject_model` your `Auth::user()` actually is (see [Core concept: the subject model](#core-concept-the-subject-model)). There's deliberately no `store()` for overtime — records are only ever auto-detected (see `OvertimeRecord::detectFromSummary()`), never created by hand over HTTP.
 
 ## Tested against real devices
 
@@ -450,7 +460,7 @@ Runs against sqlite in-memory by default (Orchestra Testbench). To run against a
 DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=your_test_db DB_USERNAME=... DB_PASSWORD=... composer test
 ```
 
-43 tests / 113 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the check-in/correction HTTP routes, the HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch, overtime/special-working-day pay (the late-ratio deduction boundary, OT capped-and-approval-gated, special-day type auto-detection, pay withheld unless the employee showed up) — and the employee/shift/schedule/leave management HTTP routes.
+47 tests / 135 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the check-in/correction HTTP routes, the HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch, overtime/special-working-day pay (the late-ratio deduction boundary, OT capped-and-approval-gated, special-day type auto-detection, pay withheld unless the employee showed up) — and every management HTTP route (employee/shift/schedule/leave/holiday/leave-type/overtime/special-working-day). Runs on GitHub Actions against PHP 8.2/8.3/8.4 on every push.
 
 ## Roadmap
 
