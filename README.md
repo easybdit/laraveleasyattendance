@@ -81,6 +81,7 @@ Laravel Easy Attendance can be used for:
 - [Tested against real devices](#tested-against-real-devices)
 - [Zero external dependencies](#zero-external-dependencies)
 - [Testing](#testing)
+- [Building a UI](#building-a-ui)
 - [Roadmap](#roadmap)
 - [Frequently Asked Questions](#frequently-asked-questions)
 - [Keywords](#keywords)
@@ -592,6 +593,10 @@ DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=your_test_db DB_USERNAME=... D
 57 tests / 169 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the check-in/correction HTTP routes, the HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch, overtime/special-working-day pay (the late-ratio deduction boundary, OT capped-and-approval-gated, special-day type auto-detection, pay withheld unless the employee showed up), every management HTTP route (employee/shift/schedule/leave/holiday/leave-type/overtime/special-working-day) — and CSV export/import, notification content, and both print views. Runs on GitHub Actions against MySQL 8 on PHP 8.2/8.3/8.4 on every push.
 
 **A cross-database gotcha this suite caught:** every `date`-cast column (`Holiday::date`, `Leave::start_date/end_date`, `EmployeeShift::start_date/end_date`, `AttendanceSummary::date`, `OvertimeRecord::date`) gets written by Eloquent through the connection's full datetime format (e.g. `"2026-09-01 00:00:00"`), not a bare date. MySQL's `DATE` columns silently truncate that back down on insert; SQLite stores it verbatim, so an exact-string `where('date', ...)` only ever matches on MySQL. Every such comparison in this codebase uses `whereDate()` instead, which compares just the date part at the SQL level regardless of which of those actually got stored — worth knowing if you query these columns yourself.
+
+## Building a UI
+
+This package is headless by design (JSON + two print views) — no bundled Vue/React/Livewire UI, and no plan to maintain three separate framework-specific packages. **[docs/frontend-examples.md](docs/frontend-examples.md)** has real, copy-adjustable code for the same check-in/check-out widget and report table built four ways: **Vue 3**, **React**, **Livewire** (calls the package's PHP directly — no HTTP round-trip, no build step), and plain Blade + vanilla JS — plus a quick "which one should I pick" guide and how CSRF/auth works for each.
 
 ## Roadmap
 

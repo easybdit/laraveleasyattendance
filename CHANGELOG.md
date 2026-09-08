@@ -4,6 +4,9 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Docs
+- `docs/frontend-examples.md` — real, copy-adjustable code for a check-in/check-out widget and a report table built four ways (Vue 3, React, Livewire, plain Blade + vanilla JS), plus a CSRF/auth explainer and a "which one should I pick" guide. The package stays headless (JSON + two print views) by design — this documents *how to consume it*, not a bundled UI; no plan to maintain three separate framework-specific UI packages (see README's new "Building a UI" section).
+
 ### Planned
 - A pluggable shift/leave/holiday contract for teams who want summaries against their own existing roster system instead of this package's `Shift`/`EmployeeShift`
 
