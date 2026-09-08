@@ -3,6 +3,7 @@
 use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceCorrectionController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceDeviceController;
+use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendancePrintController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceReportController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\EmployeeController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\HolidayController;
@@ -42,6 +43,7 @@ if (config('attendance.features.employees', false)) {
     Route::middleware(config('attendance.routes.review_middleware', ['web', 'auth']))->prefix('employees')->group(function () {
         Route::get('/', [EmployeeController::class, 'index'])->name('attendance.employees.index');
         Route::post('/', [EmployeeController::class, 'store'])->name('attendance.employees.store');
+        Route::post('/import', [EmployeeController::class, 'import'])->name('attendance.employees.import');
         Route::get('/{employee}', [EmployeeController::class, 'show'])->name('attendance.employees.show');
         Route::put('/{employee}', [EmployeeController::class, 'update'])->name('attendance.employees.update');
         Route::delete('/{employee}', [EmployeeController::class, 'destroy'])->name('attendance.employees.destroy');
@@ -120,9 +122,16 @@ if (config('attendance.features.summaries', false)) {
         Route::get('/daily', [AttendanceReportController::class, 'daily'])->name('attendance.reports.daily');
         Route::get('/monthly', [AttendanceReportController::class, 'monthly'])->name('attendance.reports.monthly');
         Route::get('/employee/{employee}', [AttendanceReportController::class, 'employeeWise'])->name('attendance.reports.employee');
+        Route::get('/monthly/print', [AttendancePrintController::class, 'monthlyReport'])->name('attendance.reports.monthly.print');
 
         if (config('attendance.features.salary', false)) {
             Route::get('/salary', [AttendanceReportController::class, 'salary'])->name('attendance.reports.salary');
         }
     });
+}
+
+if (config('attendance.features.salary', false)) {
+    Route::middleware(config('attendance.routes.review_middleware', ['web', 'auth']))
+        ->get('/salary/{slip}/print', [AttendancePrintController::class, 'payslip'])
+        ->name('attendance.salary.print');
 }

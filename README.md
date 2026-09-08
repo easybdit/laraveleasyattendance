@@ -37,6 +37,7 @@ Laravel Easy Attendance is designed as a reusable attendance and HR package for 
 - Laravel events for attendance, correction, leave, overtime, and device-sync workflows
 - Configurable feature flags so you can enable only the modules you need
 - Polymorphic attendance subjects for `User`, `Employee`, `Staff`, or another model
+- CSV export for every report, CSV bulk-import for employees, printable payslip/attendance-sheet views, and ready-made notification content for the key events — all zero external dependencies
 
 ### Use cases
 
@@ -74,6 +75,7 @@ Laravel Easy Attendance can be used for:
 - [HR & Payroll Core: Shifts, Leave, Holidays, Attendance Summaries, Overtime & Salary](#hr--payroll-core-shifts-leave-holidays-attendance-summaries-overtime--salary)
   - [Full worked example](#full-worked-example)
   - [Overtime + special working day, worked example](#overtime--special-working-day-worked-example)
+- [Exports, bulk import, notifications & print views](#exports-bulk-import-notifications--print-views)
 - [Configuration reference](#configuration-reference)
 - [Routes reference](#routes-reference)
 - [Tested against real devices](#tested-against-real-devices)
@@ -435,6 +437,72 @@ special_pay_amount=866.67            (one day's rate, for showing up on an off d
 net_salary=7433.34                   (26000 − 19933.33 + 500 + 866.67)
 ```
 
+## Exports, bulk import, notifications & print views
+
+Everything here is zero-dependency, same as the rest of the package — no maatwebsite/excel, no dompdf.
+
+### CSV export
+
+Add `&format=csv` to any of the four report endpoints for a downloadable file instead of JSON:
+
+```
+GET /attendance/reports/daily?date=2026-11-01&format=csv
+GET /attendance/reports/monthly?year=2026&month=11&format=csv
+GET /attendance/reports/employee/{employee}?from=...&to=...&format=csv
+GET /attendance/reports/salary?year=2026&month=11&format=csv
+```
+
+Plain `fputcsv()` streamed to the response (`Http\Controllers\Concerns\ExportsCsv`) — opens directly in Excel/Sheets.
+
+### CSV import (bulk-add employees)
+
+```
+POST /attendance/employees/import   (multipart, field name "file")
+```
+
+Header row: `employee_code, name, email, phone, designation, device_user_id, basic_salary, joined_at, status` (any order; unrecognized columns are ignored) — plus any `allowance_*` column (e.g. `allowance_house_rent`) becomes a key in that employee's `allowances` map. A bad row is skipped and reported, not fatal to the rest of the file:
+
+```json
+{"imported": 48, "skipped": 2, "errors": [{"row": 5, "message": "The employee code has already been taken."}]}
+```
+
+Use `EmployeeCsvImporter` directly if you'd rather trigger this from an Artisan command or a job than the HTTP endpoint.
+
+### Notifications
+
+The package fires events (see [Events](#events)) but has no opinion on *who* to notify — that's your app's call. What it does provide: ready-made **content** for each notifiable event, using only `illuminate/notifications` (core Laravel, no new package) over the `mail` and `database` channels:
+
+| Notification | For event |
+|---|---|
+| `AttendanceMarkedLateNotification` | `AttendanceMarkedLate` |
+| `LeaveRequestedNotification` | `LeaveRequested` |
+| `LeaveReviewedNotification` | `LeaveReviewed` |
+| `OvertimeReviewedNotification` | `OvertimeReviewed` |
+| `AttendanceDeviceSyncFailedNotification` | `AttendanceDeviceSyncFailed` |
+
+Wire one up in your own `EventServiceProvider` (or anywhere — they're plain `Illuminate\Notifications\Notification` classes):
+
+```php
+use Easybdit\LaravelEasyAttendance\Events\AttendanceMarkedLate;
+use Easybdit\LaravelEasyAttendance\Notifications\AttendanceMarkedLateNotification;
+
+Event::listen(AttendanceMarkedLate::class, function ($event) {
+    $hrUsers = User::where('role', 'hr')->get();
+    Notification::send($hrUsers, new AttendanceMarkedLateNotification($event->employee, $event->date, $event->lateMinutes));
+});
+```
+
+The `database` channel needs the standard Laravel `notifications` table — `php artisan notifications:table && php artisan migrate` if you haven't already got one.
+
+### Print views (payslip & attendance sheet)
+
+```
+GET /attendance/salary/{slip}/print
+GET /attendance/reports/monthly/print?year=2026&month=11
+```
+
+Plain HTML with a "Print / Save as PDF" button that calls the browser's own print dialog — every modern browser saves that straight to PDF, no server-side PDF library involved. Views are published (`--tag=attendance-views`, landing in `resources/views/vendor/attendance/`) so you can restyle or rebrand them freely.
+
 ## Configuration reference
 
 `config/attendance.php`, after `php artisan vendor:publish --tag=attendance-config`:
@@ -485,6 +553,9 @@ net_salary=7433.34                   (26000 − 19933.33 + 500 + 866.67)
 | POST | `/attendance/overtime/{id}/approve\|reject` | `overtime`, behind `review_middleware` |
 | GET/POST | `/attendance/employees/{id}/special-working-days` | `employees` + `special_working_days`, behind `review_middleware` |
 | PUT/DELETE | `/attendance/special-working-days/{id}` | `special_working_days`, behind `review_middleware` |
+| POST | `/attendance/employees/import` | `employees`, behind `review_middleware` (CSV bulk-add) |
+| GET | `/attendance/reports/monthly/print` | `summaries`, behind `review_middleware` (printable attendance sheet) |
+| GET | `/attendance/salary/{id}/print` | `salary`, behind `review_middleware` (printable payslip) |
 
 All the employee/shift/leave/overtime/special-working-day routes above take an explicit `{employee}` — they're HR/admin management endpoints, not "my own" self-service, since `Employee` is a separate concept from whatever `attendance.subject_model` your `Auth::user()` actually is (see [Core concept: the subject model](#core-concept-the-subject-model)). There's deliberately no `store()` for overtime — records are only ever auto-detected (see `OvertimeRecord::detectFromSummary()`), never created by hand over HTTP.
 
@@ -518,7 +589,7 @@ Runs against sqlite in-memory by default (Orchestra Testbench) — no service co
 DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=your_test_db DB_USERNAME=... DB_PASSWORD=... composer test
 ```
 
-47 tests / 135 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the check-in/correction HTTP routes, the HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch, overtime/special-working-day pay (the late-ratio deduction boundary, OT capped-and-approval-gated, special-day type auto-detection, pay withheld unless the employee showed up) — and every management HTTP route (employee/shift/schedule/leave/holiday/leave-type/overtime/special-working-day). Runs on GitHub Actions against MySQL 8 on PHP 8.2/8.3/8.4 on every push.
+57 tests / 169 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the check-in/correction HTTP routes, the HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch, overtime/special-working-day pay (the late-ratio deduction boundary, OT capped-and-approval-gated, special-day type auto-detection, pay withheld unless the employee showed up), every management HTTP route (employee/shift/schedule/leave/holiday/leave-type/overtime/special-working-day) — and CSV export/import, notification content, and both print views. Runs on GitHub Actions against MySQL 8 on PHP 8.2/8.3/8.4 on every push.
 
 **A cross-database gotcha this suite caught:** every `date`-cast column (`Holiday::date`, `Leave::start_date/end_date`, `EmployeeShift::start_date/end_date`, `AttendanceSummary::date`, `OvertimeRecord::date`) gets written by Eloquent through the connection's full datetime format (e.g. `"2026-09-01 00:00:00"`), not a bare date. MySQL's `DATE` columns silently truncate that back down on insert; SQLite stores it verbatim, so an exact-string `where('date', ...)` only ever matches on MySQL. Every such comparison in this codebase uses `whereDate()` instead, which compares just the date part at the SQL level regardless of which of those actually got stored — worth knowing if you query these columns yourself.
 

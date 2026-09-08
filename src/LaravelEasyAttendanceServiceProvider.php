@@ -23,6 +23,10 @@ class LaravelEasyAttendanceServiceProvider extends ServiceProvider
         // for apps that want to customize the schema.
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
+        // 'attendance::print.payslip' etc. — auto-loaded so the print
+        // routes work out of the box; publishable for restyling/branding.
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'attendance');
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/attendance.php' => config_path('attendance.php'),
@@ -31,6 +35,10 @@ class LaravelEasyAttendanceServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../database/migrations' => database_path('migrations'),
             ], 'attendance-migrations');
+
+            $this->publishes([
+                __DIR__.'/../resources/views' => resource_path('views/vendor/attendance'),
+            ], 'attendance-views');
 
             $this->commands([
                 InstallCommand::class,

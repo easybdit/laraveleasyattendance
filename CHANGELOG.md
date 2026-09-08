@@ -4,6 +4,13 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- **CSV export** — `&format=csv` on any of the four report endpoints (daily/monthly/employee-wise/salary), streamed via plain `fputcsv()` (`Http\Controllers\Concerns\ExportsCsv`). No maatwebsite/excel or PhpSpreadsheet.
+- **CSV bulk-import for employees** — `POST /attendance/employees/import`, backed by `EmployeeCsvImporter` (plain `fgetcsv()`). A bad row is skipped and reported (`{row, message}`), not fatal to the batch; `allowance_*` columns map into the employee's `allowances` array.
+- **Ready-made Notification classes** — `AttendanceMarkedLateNotification`, `LeaveRequestedNotification`, `LeaveReviewedNotification`, `OvertimeReviewedNotification`, `AttendanceDeviceSyncFailedNotification`, using only `illuminate/notifications` (mail + database channels). The package still fires events only and sends nothing itself — these are ready-made *content* to attach in your own listener, since only your app knows who should be told.
+- **Printable payslip and attendance-sheet views** — `GET /attendance/salary/{id}/print`, `GET /attendance/reports/monthly/print`, plain HTML with a print-to-PDF button (browser-native, no dompdf/wkhtmltopdf). Publishable via `--tag=attendance-views`.
+- Test suite grew to 57 tests / 169 assertions covering all four.
+
 ### Removed
 - **`coding-libs/zkteco-php` is no longer a dependency (suggested or otherwise).** Pull-mode device sync now uses `Support\Zk\ZkClient`, a from-scratch-in-this-package ZK UDP protocol client trimmed to exactly what's needed (connect, fetch attendance logs, fetch enrolled users, set push comm key) — ported from that library under its MIT license (unchanged wire-protocol logic on purpose; see `THIRD-PARTY-NOTICES.md`). This package now has zero external composer dependencies beyond Laravel itself — just the `ext-sockets` PHP extension, now declared explicitly in `composer.json`. Re-verified end to end against the same live device used in the original hardware validation: 7,172 real logs fetched in ~7s, identical behavior.
 - As a side effect, `ZKService`'s custom connect timeout is now actually honored — the old wrapper checked for a `timeout` property on the external library's client object that never existed, so a caller-supplied timeout was silently ignored in favor of that library's own default. `Support\Zk\ZkClient` takes the timeout as a real constructor argument.

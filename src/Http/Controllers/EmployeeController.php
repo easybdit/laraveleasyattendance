@@ -3,6 +3,7 @@
 namespace Easybdit\LaravelEasyAttendance\Http\Controllers;
 
 use Easybdit\LaravelEasyAttendance\Models\Employee;
+use Easybdit\LaravelEasyAttendance\Services\EmployeeCsvImporter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -59,6 +60,17 @@ class EmployeeController extends Controller
     public function schedule(Employee $employee): JsonResponse
     {
         return response()->json($employee->shiftAssignments()->with('shift')->latest('start_date')->get());
+    }
+
+    /**
+     * POST /attendance/employees/import — bulk-add from a CSV file (field
+     * name "file"). See EmployeeCsvImporter for the expected columns.
+     */
+    public function import(Request $request, EmployeeCsvImporter $importer): JsonResponse
+    {
+        $request->validate(['file' => ['required', 'file', 'mimes:csv,txt']]);
+
+        return response()->json($importer->import($request->file('file')));
     }
 
     protected function validated(Request $request, ?int $ignoreId = null): array
