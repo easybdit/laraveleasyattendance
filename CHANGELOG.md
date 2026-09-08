@@ -4,6 +4,11 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Planned
+- A pluggable shift/leave/holiday contract for teams who want summaries against their own existing roster system instead of this package's `Shift`/`EmployeeShift`
+
+## [0.4.0] - 2026-09-08
+
 ### Added
 - **CSV export** — `&format=csv` on any of the four report endpoints (daily/monthly/employee-wise/salary), streamed via plain `fputcsv()` (`Http\Controllers\Concerns\ExportsCsv`). No maatwebsite/excel or PhpSpreadsheet.
 - **CSV bulk-import for employees** — `POST /attendance/employees/import`, backed by `EmployeeCsvImporter` (plain `fgetcsv()`). A bad row is skipped and reported (`{row, message}`), not fatal to the batch; `allowance_*` columns map into the employee's `allowances` array.
@@ -34,9 +39,6 @@ All notable changes to this project are documented here. Format follows [Keep a 
 ### Published
 - **Live on Packagist as `easybdit/laraveleasyattendance`** — `composer require` now works from any project, no path-repo needed.
 
-### Planned
-- A pluggable shift/leave/holiday contract for teams who want summaries against their own existing roster system instead of this package's `Shift`/`EmployeeShift`
-
 ## [0.3.0] - 2026-09-07
 
 ### Added
@@ -59,7 +61,6 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ### Fixed
 - `Holiday::on()` collided with `Eloquent\Model`'s own static `on($connection)` — incompatible signature, fatal error on any use. Renamed to `Holiday::onDate()`.
-- A pluggable shift/leave/holiday contract for teams who want summaries against their own existing roster system instead of this package's `Shift`/`EmployeeShift`
 
 ## [0.2.1] - 2026-09-07
 
@@ -107,4 +108,5 @@ All notable changes to this project are documented here. Format follows [Keep a 
   - Built-in routes for check-in/out/today and correction request/review, prefix and middleware both configurable
   - `subject_model` defaults to the host app's auth user model — works with zero config out of the box
 
-[Unreleased]: https://github.com/easybdit/laraveleasyattendance/compare/main...HEAD
+[Unreleased]: https://github.com/easybdit/laraveleasyattendance/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/easybdit/laraveleasyattendance/compare/v0.3.0...v0.4.0
