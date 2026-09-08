@@ -28,7 +28,8 @@ class AttendanceDeviceSyncService
         }
 
         try {
-            $svc = new ZKService($device->ip, (int) ($device->port ?: 4370), $device->comm_key, 15);
+            $timeout = (int) config('attendance.device_sync.pull_timeout_seconds', 15);
+            $svc = new ZKService($device->ip, (int) ($device->port ?: 4370), $device->comm_key, $timeout);
 
             if (! $svc->connect()) {
                 $message = "Cannot connect to {$device->ip}:{$device->port}";

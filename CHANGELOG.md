@@ -4,6 +4,13 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Removed
+- **`coding-libs/zkteco-php` is no longer a dependency (suggested or otherwise).** Pull-mode device sync now uses `Support\Zk\ZkClient`, a from-scratch-in-this-package ZK UDP protocol client trimmed to exactly what's needed (connect, fetch attendance logs, fetch enrolled users, set push comm key) — ported from that library under its MIT license (unchanged wire-protocol logic on purpose; see `THIRD-PARTY-NOTICES.md`). This package now has zero external composer dependencies beyond Laravel itself — just the `ext-sockets` PHP extension, now declared explicitly in `composer.json`. Re-verified end to end against the same live device used in the original hardware validation: 7,172 real logs fetched in ~7s, identical behavior.
+- As a side effect, `ZKService`'s custom connect timeout is now actually honored — the old wrapper checked for a `timeout` property on the external library's client object that never existed, so a caller-supplied timeout was silently ignored in favor of that library's own default. `Support\Zk\ZkClient` takes the timeout as a real constructor argument.
+
+### Changed
+- `AttendanceDeviceSyncService::pull()`'s socket timeout is now configurable (`attendance.device_sync.pull_timeout_seconds`, default 15s, was hardcoded) rather than fixed.
+
 ### Added
 - Management HTTP endpoints for `Employee`, `Shift`, schedule (`EmployeeShift`) assignment, `Leave`, `Holiday`, `LeaveType`, `Overtime` (approve/reject only — records are auto-detected, never created by hand), and `SpecialWorkingDay` — `EmployeeController`, `ShiftController`, `LeaveController`, `HolidayController`, `LeaveTypeController`, `OvertimeController`, `SpecialWorkingDayController`. All nested under an explicit `{employee}` where relevant (HR/admin actions, not "my own" self-service — `Employee` is a separate concept from whatever `attendance.subject_model` your `Auth::user()` is), behind `review_middleware`.
 - `LICENSE` file (MIT) — was only declared in `composer.json` before, missing the actual file GitHub/Packagist expect.

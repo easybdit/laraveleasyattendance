@@ -98,6 +98,11 @@ return [
         'pin_column' => env('ATTENDANCE_DEVICE_PIN_COLUMN', 'device_user_id'),
         'online_threshold_seconds' => 90,
 
+        // Socket receive timeout for a pull-mode connection attempt.
+        // Lower this if you'd rather fail fast against a device that's
+        // usually reachable in well under a second on a local network.
+        'pull_timeout_seconds' => env('ATTENDANCE_DEVICE_PULL_TIMEOUT', 15),
+
         // Escalating sync-failure alert: fire AttendanceDeviceSyncFailed
         // the Nth failure in a row, then again every M failures after
         // that, so one blip doesn't spam but a real outage doesn't go

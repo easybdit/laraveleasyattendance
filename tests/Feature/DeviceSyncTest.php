@@ -66,13 +66,14 @@ class DeviceSyncTest extends TestCase
 
     public function test_pull_fails_cleanly_and_escalates_after_repeated_failures(): void
     {
-        // coding-libs/zkteco-php is intentionally NOT a require-dev of this
-        // package (it's suggest-only — push mode needs nothing extra), so
-        // ZKService's guard deterministically fails every pull() call here.
-        // That happens to make this the exact same code path a genuinely
-        // unreachable device takes, which is what we're really testing:
-        // no fatal error, sync_fail_count climbs, and the failure event
-        // fires on the configured schedule (2nd failure, then every 5th).
+        // A genuinely unreachable IP — the socket recv simply times out.
+        // Config'd to a short timeout (default is 15s) so this test doesn't
+        // take 45+ seconds; what's actually under test is that a real
+        // connect failure doesn't fatal, sync_fail_count climbs, and the
+        // failure event fires on the configured schedule (2nd failure,
+        // then every 5th), not the timeout duration itself.
+        config(['attendance.device_sync.pull_timeout_seconds' => 1]);
+
         Event::fake([AttendanceDeviceSyncFailed::class]);
 
         $device = AttendanceDevice::create(['name' => 'Unreachable', 'ip' => '10.255.255.1', 'status' => 'active']);

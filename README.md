@@ -77,6 +77,7 @@ Laravel Easy Attendance can be used for:
 - [Configuration reference](#configuration-reference)
 - [Routes reference](#routes-reference)
 - [Tested against real devices](#tested-against-real-devices)
+- [Zero external dependencies](#zero-external-dependencies)
 - [Testing](#testing)
 - [Roadmap](#roadmap)
 - [Frequently Asked Questions](#frequently-asked-questions)
@@ -194,13 +195,9 @@ Then set each person's device PIN (`$user->device_user_id = '1001'`). A punch wh
 
 ### Mode A — Pull (server connects out to the device)
 
-Use this when your server can reach the device's IP directly (same network / VPN).
+Use this when your server can reach the device's IP directly (same network / VPN). No extra composer package needed — the ZK protocol client ships built into this package (see [Zero external dependencies](#zero-external-dependencies)); just `ext-sockets`, which PHP almost always has enabled already.
 
-1. **Install the ZK client library** (only needed for pull):
-   ```bash
-   composer require coding-libs/zkteco-php
-   ```
-2. **Register the device:**
+1. **Register the device:**
    ```php
    $device = AttendanceDevice::create([
        'name' => 'Main Gate',
@@ -210,11 +207,11 @@ Use this when your server can reach the device's IP directly (same network / VPN
    ]);
    ```
    or `POST /attendance/devices` with the same fields. Nothing is fetched yet at this point.
-3. **(optional) Test the connection first**, before pulling any data — confirms the device is reachable without importing anything:
+2. **(optional) Test the connection first**, before pulling any data — confirms the device is reachable without importing anything:
    ```
    POST /attendance/devices/{id}/test
    ```
-4. **Pull — this is the step that actually fetches and stores the data:**
+3. **Pull — this is the step that actually fetches and stores the data:**
    ```
    POST /attendance/devices/{id}/pull
    ```
@@ -224,7 +221,7 @@ Use this when your server can reach the device's IP directly (same network / VPN
    Schedule::command('attendance:sync-devices')->everyFiveMinutes();
    ```
    The response tells you exactly what happened: `{"success": true, "message": "134 logs fetched · 12 new · 2 PIN(s) not matched...", "imported": 12, "unmatched": [...]}`.
-5. **Now query the data** (see [Viewing synced data](#viewing-synced-data) below) — before this step there is nothing to see for this device.
+4. **Now query the data** (see [Viewing synced data](#viewing-synced-data) below) — before this step there is nothing to see for this device.
 
 ### Mode B — Push / ADMS (the device connects to you)
 
@@ -499,6 +496,14 @@ Not just unit-tested against fixtures — validated end to end against actual pr
 - **Pull (IP), connection only:** registered a live device, tested the connection — succeeded, confirmed **zero** attendance rows existed for it beforehand (nothing is fetched just by registering/testing).
 - **Pull (IP), full sync:** same device, `pull` — **7,136 real attendance logs fetched in ~13 seconds**. PINs with no matching subject were correctly reported (not silently dropped) and produced no rows.
 - **Pull (IP), matched subject:** assigned a subject a real PIN seen in that log, pulled again — **23 real historical punches** (spanning roughly 4 months of real dates) landed on that subject and were immediately queryable via `$user->attendances()` and `$user->attendanceOn($date)`.
+- **Pull (IP), built-in ZK client:** re-ran the same live-device pull after replacing the external ZK library with this package's own vendored client (see below) — **7,172 real logs fetched in ~7 seconds**, identical behavior, zero external package involved.
+
+## Zero external dependencies
+
+This package requires only Laravel itself (`illuminate/support`, `illuminate/database`) and the `ext-sockets` PHP extension (near-universally enabled already) — nothing else, for either sync mode:
+
+- **Push/ADMS** never needed anything extra — it's plain HTTP, handled by `AdmsPushController`.
+- **Pull** talks the ZKTeco UDP protocol directly via `Support\Zk\ZkClient`, a from-scratch-in-this-package client trimmed to exactly what device sync needs (connect, fetch attendance logs, fetch enrolled users, set the push comm key). It started as a wrapper around [coding-libs/zkteco-php](https://github.com/coding-libs/zkteco-php); the wire-protocol logic (packet framing, checksum, record parsing) is ported from it under MIT license — see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) — unchanged on purpose, since it's what's validated against real hardware above, but no longer an installable dependency: one less thing that can go missing or version-conflict in your project.
 
 ## Testing
 
@@ -531,6 +536,10 @@ Yes. Laravel Easy Attendance provides employee check-in/check-out, attendance lo
 ### Does it support ZKTeco biometric devices?
 
 Yes. The package supports both ZKTeco Pull mode and ZKTeco Push / ADMS mode. Pull mode connects from the Laravel server to the device, while Push / ADMS allows the device to send attendance data to the Laravel application.
+
+### Do I need to install any other package for ZKTeco support?
+
+No. Both sync modes work with zero external packages — the ZK protocol client is built directly into this package (see [Zero external dependencies](#zero-external-dependencies)). All you need is `ext-sockets`, a standard PHP extension almost every install already has enabled.
 
 ### Can I use my existing User model?
 
