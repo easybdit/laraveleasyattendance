@@ -1,8 +1,12 @@
 # Changelog
 
-All notable changes to this project are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/); this project follows [Semantic Versioning](https://semver.org/) once it reaches `1.0.0` — until then, minor versions may still include breaking changes.
+All notable changes to this project are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/); this project follows [Semantic Versioning](https://semver.org/) as of `1.0.0` — versions before that (`0.x`) could and did include breaking changes in minor releases.
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-09-08
+
+First stable release. Semantic Versioning applies from here on — see the policy note at the top of this file.
 
 ### Changed
 - **BREAKING: List endpoints are now paginated.** `GET /attendance/employees`, `/shifts`, `/departments`, `/designations`, `/holidays`, `/leave-types`, and `/devices` now return a standard Laravel paginator object (`{data, current_page, last_page, per_page, total, ...}`) instead of a flat JSON array. Read items from `data`. Control page size with `?per_page=` (default 25, capped at 100) and page with `?page=`. This was a genuine production-readiness gap — an unbounded `->get()` on these indexes would eventually return every row in the table.
@@ -21,8 +25,7 @@ All notable changes to this project are documented here. Format follows [Keep a 
 ### Docs
 - `docs/frontend-examples.md` — real, copy-adjustable code for a check-in/check-out widget and a report table built four ways (Vue 3, React, Livewire, plain Blade + vanilla JS), plus a CSRF/auth explainer and a "which one should I pick" guide. The package stays headless (JSON + two print views) by design — this documents *how to consume it*, not a bundled UI; no plan to maintain three separate framework-specific UI packages (see README's new "Building a UI" section).
 
-### Planned
-- A pluggable shift/leave/holiday contract for teams who want summaries against their own existing roster system instead of this package's `Shift`/`EmployeeShift`
+See the README's [Roadmap](README.md#roadmap) for what's planned beyond 1.0.0.
 
 ## [0.4.0] - 2026-09-08
 
