@@ -15,8 +15,6 @@ It supports both **ZKTeco Pull mode and Push/ADMS mode**, making it suitable for
 
 Extracted and redesigned from a production HR system's attendance module, and validated end-to-end against real ZKTeco hardware (see [Tested against real devices](#tested-against-real-devices)).
 
-## Contents
-
 ## Why Laravel Easy Attendance?
 
 Laravel Easy Attendance is designed as a reusable attendance and HR package for Laravel applications. It covers the complete flow from raw check-in/check-out punches to daily attendance summaries, leave, overtime, special working days, and salary generation.
@@ -60,7 +58,9 @@ Laravel Easy Attendance can be used for:
 - Laravel 11, 12, or 13
 - MySQL, MariaDB, SQLite, or another supported Laravel database driver
 
+## Contents
 
+- [Why Laravel Easy Attendance?](#why-laravel-easy-attendance)
 - [Install](#install)
 - [Quick start](#quick-start)
 - [Core concept: the subject model](#core-concept-the-subject-model)
