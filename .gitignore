@@ -1,3 +1,4 @@
 /vendor
 composer.lock
 .phpunit.result.cache
+.github/workflows/tests.yml
