@@ -34,10 +34,13 @@ class Leave extends Model
      */
     public static function covers(int $employeeId, string $date): bool
     {
+        // whereDate(), not where() — see Holiday::onDate()'s comment for
+        // why an exact-string comparison against a `date`-cast column is
+        // MySQL-only. whereDate() is safe on any driver.
         return static::where('employee_id', $employeeId)
             ->where('status', 'approved')
-            ->where('start_date', '<=', $date)
-            ->where('end_date', '>=', $date)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
             ->exists();
     }
 

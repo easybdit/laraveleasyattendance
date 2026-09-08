@@ -30,9 +30,12 @@ class EmployeeShift extends Model
 
     public function scopeCovering($query, string $date)
     {
-        return $query->where('start_date', '<=', $date)
+        // whereDate(), not where() — see Holiday::onDate()'s comment for
+        // why an exact-string comparison against a `date`-cast column is
+        // MySQL-only. whereDate() is safe on any driver.
+        return $query->whereDate('start_date', '<=', $date)
             ->where(function ($q) use ($date) {
-                $q->whereNull('end_date')->orWhere('end_date', '>=', $date);
+                $q->whereNull('end_date')->orWhereDate('end_date', '>=', $date);
             });
     }
 }

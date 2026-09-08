@@ -62,7 +62,12 @@ class OvertimeRecord extends Model
             return null;
         }
 
-        $existing = static::where('employee_id', $employee->id)->where('date', $summary->date)->first();
+        // whereDate(), not where() — see Holiday::onDate()'s comment for
+        // why an exact-string comparison against a `date`-cast column
+        // (like $summary->date, itself a Carbon instance here) is
+        // MySQL-only. whereDate() is safe on any driver, and accepts a
+        // Carbon instance directly.
+        $existing = static::where('employee_id', $employee->id)->whereDate('date', $summary->date)->first();
         if ($existing && ! ($existing->status === 'pending' && $existing->source === 'auto')) {
             return $existing;
         }
@@ -71,18 +76,26 @@ class OvertimeRecord extends Model
         $otHours = round(min($summary->ot_minutes / 60, $maxHours), 2);
         $otRate = static::hourlyRate($employee);
 
-        return static::updateOrCreate(
-            ['employee_id' => $employee->id, 'date' => $summary->date],
-            [
-                'shift_end_time' => $summary->shift_end,
-                'actual_out_time' => $summary->last_out?->format('H:i:s'),
-                'ot_hours' => $otHours,
-                'ot_rate' => $otRate,
-                'ot_amount' => round($otHours * $otRate, 2),
-                'source' => 'auto',
-                'status' => 'pending',
-            ]
-        );
+        $attributes = [
+            'shift_end_time' => $summary->shift_end,
+            'actual_out_time' => $summary->last_out?->format('H:i:s'),
+            'ot_hours' => $otHours,
+            'ot_rate' => $otRate,
+            'ot_amount' => round($otHours * $otRate, 2),
+            'source' => 'auto',
+            'status' => 'pending',
+        ];
+
+        // Reuse $existing (same row detectFromSummary would otherwise
+        // have to re-look-up via updateOrCreate's own exact-match query,
+        // which is exactly the lookup that's unreliable across drivers).
+        if ($existing) {
+            $existing->update($attributes);
+
+            return $existing;
+        }
+
+        return static::create(array_merge(['employee_id' => $employee->id, 'date' => $summary->date], $attributes));
     }
 
     public function approve(?int $reviewerId = null, ?string $note = null): void

@@ -26,7 +26,14 @@ class Holiday extends Model
     {
         $carbon = Carbon::parse($date);
 
-        return static::where('date', $carbon->toDateString())
+        // whereDate(), not where() — a plain `date`-cast attribute gets
+        // written through fromDateTime() using the connection's full
+        // datetime format (e.g. "2026-09-01 00:00:00"). MySQL silently
+        // truncates that back to just the date on a DATE column; SQLite
+        // stores it verbatim, so an exact-string where('date', ...) only
+        // ever matches on MySQL. whereDate() compares just the date part
+        // at the SQL level regardless of which of those got stored.
+        return static::whereDate('date', $carbon->toDateString())
             ->orWhere(function ($q) use ($carbon) {
                 $q->where('is_recurring_yearly', true)
                     ->whereMonth('date', $carbon->month)

@@ -12,6 +12,10 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ### Changed
 - `composer.json`'s `description`/`keywords` rewritten to reflect the full HR/payroll scope (was still the original attendance-only wording from `v0.1.0`) — this is what Packagist displays.
+- CI runs against a real MySQL 8 service container instead of sqlite in-memory, matching how this package is actually developed/tested day to day.
+
+### Fixed
+- **Cross-database date-comparison bug**, caught by CI: every `date`-cast column (`Holiday::date`, `Leave::start_date`/`end_date`, `EmployeeShift::start_date`/`end_date`, `AttendanceSummary::date`, `OvertimeRecord::date`) is written by Eloquent through the connection's full datetime format, which MySQL's `DATE` columns silently truncate on insert but SQLite stores verbatim — so every exact-string `where('date', ...)` comparison in `Holiday::onDate()`, `Leave::covers()`, `EmployeeShift::scopeCovering()`, `AttendanceSummaryService::buildOne()`, and `OvertimeRecord::detectFromSummary()` only ever matched on MySQL. Switched all of them to `whereDate()`, and replaced the two `updateOrCreate()` calls whose own internal lookup had the same problem (silently attempting a duplicate insert instead of finding the existing row) with an explicit `whereDate()` find first. No behavior change on MySQL; fixes summaries/leave/holidays/overtime on sqlite and any other driver.
 
 ### Published
 - **Live on Packagist as `easybdit/laraveleasyattendance`** — `composer require` now works from any project, no path-repo needed.

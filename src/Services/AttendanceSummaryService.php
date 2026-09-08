@@ -73,29 +73,41 @@ class AttendanceSummaryService
             }
         }
 
-        $wasAlreadyLate = AttendanceSummary::where('employee_id', $employee->id)
-            ->where('date', $date)
-            ->value('status') === 'late';
+        // whereDate(), and a manual find-then-save instead of
+        // updateOrCreate() — see Holiday::onDate()'s comment. updateOrCreate()
+        // would look up the existing row via an exact-string match on the
+        // `date`-cast column, which only reliably finds it on MySQL; on
+        // SQLite it wouldn't find the row this same method previously
+        // wrote (same corrupted-format quirk) and would attempt a second
+        // INSERT, colliding with the (employee_id, date) unique index.
+        $existing = AttendanceSummary::where('employee_id', $employee->id)->whereDate('date', $date)->first();
+        $wasAlreadyLate = $existing?->status === 'late';
 
-        $summary = AttendanceSummary::updateOrCreate(
-            ['employee_id' => $employee->id, 'date' => $date],
-            [
-                'shift_id' => $shiftInfo['shift_id'],
-                'status' => $status,
-                'first_in' => $firstIn,
-                'last_out' => $lastOut,
-                'punch_count' => $punches->count(),
-                'late_minutes' => $lateMinutes,
-                'ot_minutes' => $otMinutes,
-                'is_holiday' => (bool) $holiday,
-                'is_day_off' => $shiftInfo['is_off_day'],
-                'is_on_leave' => $onLeave,
-                'holiday_name' => $holiday?->name,
-                'shift_start' => $shiftInfo['start_time'],
-                'shift_end' => $shiftInfo['end_time'],
-                'shift_source' => $shiftInfo['source'],
-            ]
-        );
+        $attributes = [
+            'employee_id' => $employee->id,
+            'date' => $date,
+            'shift_id' => $shiftInfo['shift_id'],
+            'status' => $status,
+            'first_in' => $firstIn,
+            'last_out' => $lastOut,
+            'punch_count' => $punches->count(),
+            'late_minutes' => $lateMinutes,
+            'ot_minutes' => $otMinutes,
+            'is_holiday' => (bool) $holiday,
+            'is_day_off' => $shiftInfo['is_off_day'],
+            'is_on_leave' => $onLeave,
+            'holiday_name' => $holiday?->name,
+            'shift_start' => $shiftInfo['start_time'],
+            'shift_end' => $shiftInfo['end_time'],
+            'shift_source' => $shiftInfo['source'],
+        ];
+
+        if ($existing) {
+            $existing->update($attributes);
+            $summary = $existing;
+        } else {
+            $summary = AttendanceSummary::create($attributes);
+        }
 
         if ($status === 'late' && ! $wasAlreadyLate) {
             event(new AttendanceMarkedLate($employee, $date, $lateMinutes));

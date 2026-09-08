@@ -507,13 +507,15 @@ composer install
 composer test
 ```
 
-Runs against sqlite in-memory by default (Orchestra Testbench). To run against another driver instead — e.g. this repo's own dev environment, which has no `pdo_sqlite` — set real env vars, no file to edit:
+Runs against sqlite in-memory by default (Orchestra Testbench) — no service container to stand up locally. Override via real env vars, no file to edit, for any other driver — this is what CI itself uses (MySQL 8, via a service container in `.github/workflows/tests.yml`):
 
 ```bash
 DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=your_test_db DB_USERNAME=... DB_PASSWORD=... composer test
 ```
 
-47 tests / 135 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the check-in/correction HTTP routes, the HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch, overtime/special-working-day pay (the late-ratio deduction boundary, OT capped-and-approval-gated, special-day type auto-detection, pay withheld unless the employee showed up) — and every management HTTP route (employee/shift/schedule/leave/holiday/leave-type/overtime/special-working-day). Runs on GitHub Actions against PHP 8.2/8.3/8.4 on every push.
+47 tests / 135 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the check-in/correction HTTP routes, the HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch, overtime/special-working-day pay (the late-ratio deduction boundary, OT capped-and-approval-gated, special-day type auto-detection, pay withheld unless the employee showed up) — and every management HTTP route (employee/shift/schedule/leave/holiday/leave-type/overtime/special-working-day). Runs on GitHub Actions against MySQL 8 on PHP 8.2/8.3/8.4 on every push.
+
+**A cross-database gotcha this suite caught:** every `date`-cast column (`Holiday::date`, `Leave::start_date/end_date`, `EmployeeShift::start_date/end_date`, `AttendanceSummary::date`, `OvertimeRecord::date`) gets written by Eloquent through the connection's full datetime format (e.g. `"2026-09-01 00:00:00"`), not a bare date. MySQL's `DATE` columns silently truncate that back down on insert; SQLite stores it verbatim, so an exact-string `where('date', ...)` only ever matches on MySQL. Every such comparison in this codebase uses `whereDate()` instead, which compares just the date part at the SQL level regardless of which of those actually got stored — worth knowing if you query these columns yourself.
 
 ## Roadmap
 
