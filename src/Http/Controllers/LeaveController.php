@@ -50,4 +50,15 @@ class LeaveController extends Controller
 
         return response()->json($leave->fresh());
     }
+
+    /**
+     * GET /attendance/employees/{employee}/leave-balance?year=2026
+     * Allowed/used/remaining per leave type for one calendar year.
+     */
+    public function balance(Employee $employee, Request $request): JsonResponse
+    {
+        $year = (int) $request->input('year', now()->year);
+
+        return response()->json(['year' => $year, 'balances' => $employee->leaveBalances($year)]);
+    }
 }

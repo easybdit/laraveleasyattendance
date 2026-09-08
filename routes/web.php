@@ -5,6 +5,8 @@ use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceCorrectionControll
 use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceDeviceController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendancePrintController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\AttendanceReportController;
+use Easybdit\LaravelEasyAttendance\Http\Controllers\DepartmentController;
+use Easybdit\LaravelEasyAttendance\Http\Controllers\DesignationController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\EmployeeController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\HolidayController;
 use Easybdit\LaravelEasyAttendance\Http\Controllers\LeaveController;
@@ -56,6 +58,7 @@ if (config('attendance.features.employees', false)) {
         if (config('attendance.features.leave', false)) {
             Route::get('/{employee}/leaves', [LeaveController::class, 'index'])->name('attendance.employees.leaves.index');
             Route::post('/{employee}/leaves', [LeaveController::class, 'store'])->name('attendance.employees.leaves.store');
+            Route::get('/{employee}/leave-balance', [LeaveController::class, 'balance'])->name('attendance.employees.leave-balance');
         }
 
         if (config('attendance.features.overtime', false)) {
@@ -105,6 +108,22 @@ if (config('attendance.features.leave', false)) {
         Route::post('/', [LeaveTypeController::class, 'store'])->name('attendance.leave-types.store');
         Route::put('/{leaveType}', [LeaveTypeController::class, 'update'])->name('attendance.leave-types.update');
         Route::delete('/{leaveType}', [LeaveTypeController::class, 'destroy'])->name('attendance.leave-types.destroy');
+    });
+}
+
+if (config('attendance.features.departments', false)) {
+    Route::middleware(config('attendance.routes.review_middleware', ['web', 'auth']))->prefix('departments')->group(function () {
+        Route::get('/', [DepartmentController::class, 'index'])->name('attendance.departments.index');
+        Route::post('/', [DepartmentController::class, 'store'])->name('attendance.departments.store');
+        Route::put('/{department}', [DepartmentController::class, 'update'])->name('attendance.departments.update');
+        Route::delete('/{department}', [DepartmentController::class, 'destroy'])->name('attendance.departments.destroy');
+    });
+
+    Route::middleware(config('attendance.routes.review_middleware', ['web', 'auth']))->prefix('designations')->group(function () {
+        Route::get('/', [DesignationController::class, 'index'])->name('attendance.designations.index');
+        Route::post('/', [DesignationController::class, 'store'])->name('attendance.designations.store');
+        Route::put('/{designation}', [DesignationController::class, 'update'])->name('attendance.designations.update');
+        Route::delete('/{designation}', [DesignationController::class, 'destroy'])->name('attendance.designations.destroy');
     });
 }
 

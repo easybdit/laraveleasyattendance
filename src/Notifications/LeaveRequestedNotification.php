@@ -32,9 +32,14 @@ class LeaveRequestedNotification extends Notification
         $employee = $this->leave->employee;
 
         return (new MailMessage)
-            ->subject("Leave request — {$employee->name}")
-            ->line("{$employee->name} ({$employee->employee_code}) requested leave from {$this->leave->start_date->toDateString()} to {$this->leave->end_date->toDateString()}.")
-            ->line($this->leave->reason ? "Reason: {$this->leave->reason}" : 'No reason given.');
+            ->subject(__('attendance::notifications.leave_requested.subject', ['name' => $employee->name]))
+            ->line(__('attendance::notifications.leave_requested.line', [
+                'name' => $employee->name, 'code' => $employee->employee_code,
+                'start' => $this->leave->start_date->toDateString(), 'end' => $this->leave->end_date->toDateString(),
+            ]))
+            ->line($this->leave->reason
+                ? __('attendance::notifications.leave_requested.reason_line', ['reason' => $this->leave->reason])
+                : __('attendance::notifications.leave_requested.no_reason_line'));
     }
 
     public function toArray(object $notifiable): array

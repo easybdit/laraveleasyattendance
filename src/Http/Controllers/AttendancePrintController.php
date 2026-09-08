@@ -17,15 +17,6 @@ use Illuminate\View\View;
  */
 class AttendancePrintController extends Controller
 {
-    private const STATUS_LABELS = [
-        'present' => 'P',
-        'late' => 'L',
-        'absent' => 'A',
-        'leave' => 'LV',
-        'holiday' => 'H',
-        'day_off' => 'O',
-    ];
-
     /**
      * GET /attendance/salary/{slip}/print
      */
@@ -57,7 +48,7 @@ class AttendancePrintController extends Controller
                 foreach ($rows as $row) {
                     $byDay[$row->date->day] = [
                         'status' => $row->status,
-                        'label' => self::STATUS_LABELS[$row->status] ?? '?',
+                        'label' => __('attendance::attendance.status_short.'.$row->status),
                     ];
                 }
 

@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Attendance Sheet — {{ $monthLabel }}</title>
+    <title>{{ __('attendance::print.monthly_report.title') }} — {{ $monthLabel }}</title>
     <style>
         body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #222; margin: 1.5rem; }
         h1 { font-size: 16px; margin-bottom: 0.25rem; }
@@ -22,21 +22,21 @@
     </style>
 </head>
 <body>
-    <button class="no-print" onclick="window.print()">Print / Save as PDF</button>
+    <button class="no-print" onclick="window.print()">{{ __('attendance::print.print_button') }}</button>
 
-    <h1>Attendance Sheet — {{ $monthLabel }}</h1>
+    <h1>{{ __('attendance::print.monthly_report.title') }} — {{ $monthLabel }}</h1>
 
     <table>
         <thead>
             <tr>
-                <th>Employee</th>
+                <th>{{ __('attendance::print.monthly_report.employee') }}</th>
                 @foreach ($days as $day)
                     <th>{{ $day }}</th>
                 @endforeach
-                <th>Present</th>
-                <th>Absent</th>
-                <th>Late</th>
-                <th>Leave</th>
+                <th>{{ __('attendance::print.monthly_report.present') }}</th>
+                <th>{{ __('attendance::print.monthly_report.absent') }}</th>
+                <th>{{ __('attendance::print.monthly_report.late') }}</th>
+                <th>{{ __('attendance::print.monthly_report.leave') }}</th>
             </tr>
         </thead>
         <tbody>

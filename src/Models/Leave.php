@@ -29,6 +29,15 @@ class Leave extends Model
     }
 
     /**
+     * Inclusive day count (start and end both count) — whole days only,
+     * no half-day support yet.
+     */
+    public function daysCount(): int
+    {
+        return $this->start_date->diffInDays($this->end_date) + 1;
+    }
+
+    /**
      * Is $date covered by an APPROVED leave for this employee — the check
      * AttendanceSummaryService uses when deciding a day's status.
      */

@@ -40,9 +40,9 @@ class AttendanceMarkedLateNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Late attendance — {$this->employee->name}")
-            ->line("{$this->employee->name} ({$this->employee->employee_code}) checked in late on {$this->date}.")
-            ->line("Late by {$this->lateMinutes} minute(s).");
+            ->subject(__('attendance::notifications.late.subject', ['name' => $this->employee->name]))
+            ->line(__('attendance::notifications.late.line', ['name' => $this->employee->name, 'code' => $this->employee->employee_code, 'date' => $this->date]))
+            ->line(__('attendance::notifications.late.minutes_line', ['minutes' => $this->lateMinutes]));
     }
 
     public function toArray(object $notifiable): array

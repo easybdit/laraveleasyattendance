@@ -27,6 +27,11 @@ class LaravelEasyAttendanceServiceProvider extends ServiceProvider
         // routes work out of the box; publishable for restyling/branding.
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'attendance');
 
+        // trans('attendance::notifications.late.subject') etc. — English
+        // shipped, publishable so you can add/override other locales
+        // without forking the package.
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'attendance');
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/attendance.php' => config_path('attendance.php'),
@@ -39,6 +44,10 @@ class LaravelEasyAttendanceServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../resources/views' => resource_path('views/vendor/attendance'),
             ], 'attendance-views');
+
+            $this->publishes([
+                __DIR__.'/../resources/lang' => lang_path('vendor/attendance'),
+            ], 'attendance-lang');
 
             $this->commands([
                 InstallCommand::class,

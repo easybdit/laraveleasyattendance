@@ -19,6 +19,7 @@ class Employee extends Model
 
     protected $fillable = [
         'employee_code', 'name', 'email', 'phone', 'designation',
+        'department_id', 'designation_id',
         'device_user_id', 'basic_salary', 'allowances', 'joined_at', 'status',
     ];
 
@@ -31,6 +32,16 @@ class Employee extends Model
     public function shiftAssignments()
     {
         return $this->hasMany(EmployeeShift::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function designationRecord()
+    {
+        return $this->belongsTo(Designation::class, 'designation_id');
     }
 
     public function leaves()
@@ -70,5 +81,18 @@ class Employee extends Model
         event(new LeaveRequested($leave));
 
         return $leave;
+    }
+
+    /**
+     * Allowed/used/remaining for every leave type, for one calendar year.
+     *
+     * @return \Illuminate\Support\Collection<int, array{leave_type_id: int, leave_type: string, allowed: ?int, used: int, remaining: ?int}>
+     */
+    public function leaveBalances(?int $year = null): \Illuminate\Support\Collection
+    {
+        return LeaveType::all()->map(fn (LeaveType $type) => array_merge(
+            ['leave_type_id' => $type->id, 'leave_type' => $type->name],
+            $type->balanceForEmployee($this, $year)
+        ));
     }
 }

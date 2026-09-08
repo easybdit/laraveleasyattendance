@@ -81,6 +81,8 @@ class EmployeeController extends Controller
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
             'designation' => ['nullable', 'string', 'max:100'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'designation_id' => ['nullable', 'exists:designations,id'],
             'device_user_id' => ['nullable', 'string', 'max:50', 'unique:employees,device_user_id'.($ignoreId ? ",{$ignoreId}" : '')],
             'basic_salary' => ['required', 'numeric', 'min:0'],
             'allowances' => ['nullable', 'array'],

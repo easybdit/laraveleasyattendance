@@ -58,6 +58,7 @@ return [
         'salary'    => env('ATTENDANCE_FEATURE_SALARY', env('ATTENDANCE_FEATURE_HR_CORE', false)),
         'overtime'  => env('ATTENDANCE_FEATURE_OVERTIME', env('ATTENDANCE_FEATURE_HR_CORE', false)),
         'special_working_days' => env('ATTENDANCE_FEATURE_SPECIAL_WORKING_DAYS', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'departments' => env('ATTENDANCE_FEATURE_DEPARTMENTS', env('ATTENDANCE_FEATURE_HR_CORE', false)),
     ],
 
     /*

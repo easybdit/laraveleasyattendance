@@ -26,12 +26,10 @@ class OvertimeReviewedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $status = ucfirst($this->record->status);
-
         return (new MailMessage)
-            ->subject("Overtime {$status} — {$this->record->date->toDateString()}")
-            ->line("Your overtime for {$this->record->date->toDateString()} ({$this->record->ot_hours}h) was {$this->record->status}.")
-            ->when($this->record->note, fn ($mail) => $mail->line("Note: {$this->record->note}"));
+            ->subject(__('attendance::notifications.overtime_reviewed.subject', ['status' => ucfirst($this->record->status), 'date' => $this->record->date->toDateString()]))
+            ->line(__('attendance::notifications.overtime_reviewed.line', ['date' => $this->record->date->toDateString(), 'hours' => $this->record->ot_hours, 'status' => $this->record->status]))
+            ->when($this->record->note, fn ($mail) => $mail->line(__('attendance::notifications.overtime_reviewed.note_line', ['note' => $this->record->note])));
     }
 
     public function toArray(object $notifiable): array

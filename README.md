@@ -38,6 +38,7 @@ Laravel Easy Attendance is designed as a reusable attendance and HR package for 
 - Configurable feature flags so you can enable only the modules you need
 - Polymorphic attendance subjects for `User`, `Employee`, `Staff`, or another model
 - CSV export for every report, CSV bulk-import for employees, printable payslip/attendance-sheet views, and ready-made notification content for the key events — all zero external dependencies
+- Leave balance tracking (allowed/used/remaining per leave type per year), Department & Designation models, and full localization (English shipped, publishable for any other language)
 
 ### Use cases
 
@@ -76,6 +77,7 @@ Laravel Easy Attendance can be used for:
   - [Full worked example](#full-worked-example)
   - [Overtime + special working day, worked example](#overtime--special-working-day-worked-example)
 - [Exports, bulk import, notifications & print views](#exports-bulk-import-notifications--print-views)
+  - [Localization](#localization)
 - [Configuration reference](#configuration-reference)
 - [Routes reference](#routes-reference)
 - [Tested against real devices](#tested-against-real-devices)
@@ -290,6 +292,16 @@ use Easybdit\LaravelEasyAttendance\Services\{AttendanceSummaryService, SalarySer
    ```
    `Employee` itself uses `HasAttendance`, so `$employee->checkIn()`, `->checkOut()`, device sync — everything from the sections above — works on it directly. Also manageable over HTTP: `GET/POST /attendance/employees`, `GET/PUT/DELETE /attendance/employees/{id}`.
 
+   **Department & Designation** (optional, `ATTENDANCE_FEATURE_DEPARTMENTS`) — proper models instead of the plain `designation` string column above (which still works fine on its own if that's all you need):
+   ```php
+   $dept = Department::create(['name' => 'Engineering']);
+   $role = Designation::create(['name' => 'Software Engineer', 'department_id' => $dept->id]); // department_id is optional — a designation can be org-wide
+   $employee->update(['department_id' => $dept->id, 'designation_id' => $role->id]);
+   $employee->department;         // belongsTo Department
+   $employee->designationRecord;  // belongsTo Designation — named to not collide with the plain `designation` string attribute
+   ```
+   Deleting a `Department` nulls out (never blocks) any `Designation`/`Employee` pointing at it. CRUD over HTTP: `GET/POST/PUT/DELETE /attendance/departments...`, `.../designations...`.
+
 2. **Shift** — working hours + late grace + off days.
    ```php
    $shift = Shift::create(['name' => 'General', 'start_time' => '09:00', 'end_time' => '17:00', 'late_grace_minutes' => 10, 'off_days' => ['Friday']]);
@@ -313,6 +325,12 @@ use Easybdit\LaravelEasyAttendance\Services\{AttendanceSummaryService, SalarySer
    $leave->approve($reviewerId); // or ->reject(...)
    ```
    An approved leave outranks everything else for that date — even a stray punch. Or `GET/POST /attendance/employees/{id}/leaves`, `POST /attendance/leaves/{id}/approve|reject`.
+
+   **Leave balance** (allowed/used/remaining per `LeaveType`, per calendar year — a leave counts against the year of its `start_date`):
+   ```php
+   $employee->leaveBalances(2026); // every leave type: [['leave_type' => 'Casual', 'allowed' => 10, 'used' => 3, 'remaining' => 7], ...]
+   ```
+   Or `GET /attendance/employees/{id}/leave-balance?year=2026`.
 
 6. **Attendance summary** — the actual present/late/absent/leave/holiday/day_off computation, one row per employee per day:
    ```bash
@@ -504,6 +522,23 @@ GET /attendance/reports/monthly/print?year=2026&month=11
 
 Plain HTML with a "Print / Save as PDF" button that calls the browser's own print dialog — every modern browser saves that straight to PDF, no server-side PDF library involved. Views are published (`--tag=attendance-views`, landing in `resources/views/vendor/attendance/`) so you can restyle or rebrand them freely.
 
+### Localization
+
+Every user-facing string the package itself generates — notification subjects/lines, print-view labels, and the day-status labels (`Present`/`Late`/.../`P`/`L`/...) — comes from Laravel's own translation system, shipped in English (`resources/lang/en/{attendance,notifications,print}.php`), using only `illuminate/translation` (core Laravel).
+
+Add another locale without forking the package:
+
+```bash
+php artisan vendor:publish --tag=attendance-lang
+```
+
+This lands the files at `lang/vendor/attendance/en/`. Copy that `en/` folder to e.g. `lang/vendor/attendance/bn/` and translate the strings — Laravel picks the right one based on `App::setLocale()` / `config('app.locale')` automatically, same as any other translation file.
+
+```php
+__('attendance::notifications.late.subject', ['name' => $employee->name]);
+__('attendance::attendance.status_short.present'); // 'P'
+```
+
 ## Configuration reference
 
 `config/attendance.php`, after `php artisan vendor:publish --tag=attendance-config`:
@@ -517,7 +552,7 @@ Plain HTML with a "Print / Save as PDF" button that calls the browser's own prin
 | `routes.review_middleware` | `['web','auth']` | Extra gate on correction/device management routes — point at your own admin `can:` |
 | `features.corrections` | `true` | Correction request/approve/reject |
 | `features.device_sync` | `false` | ZKTeco pull + push/ADMS |
-| `features.employees` / `shifts` / `holidays` / `leave` / `summaries` / `salary` / `overtime` / `special_working_days` | `false` | HR core, each individually toggleable — or set `ATTENDANCE_FEATURE_HR_CORE=true` to flip all eight at once |
+| `features.employees` / `shifts` / `holidays` / `leave` / `summaries` / `salary` / `overtime` / `special_working_days` / `departments` | `false` | HR core, each individually toggleable — or set `ATTENDANCE_FEATURE_HR_CORE=true` to flip all nine at once |
 | `device_sync.pin_column` | `device_user_id` | Column on the subject model's table holding the device PIN |
 | `device_sync.online_threshold_seconds` | `90` | How recently a push device must have been seen to count "online" |
 | `device_sync.notify_after_failures` / `notify_every` | `2` / `5` | `AttendanceDeviceSyncFailed` escalation schedule |
@@ -548,6 +583,9 @@ Plain HTML with a "Print / Save as PDF" button that calls the browser's own prin
 | GET/POST/PUT/DELETE | `/attendance/shifts...` | `shifts`, behind `review_middleware` |
 | GET/POST | `/attendance/employees/{id}/leaves` | `employees` + `leave`, behind `review_middleware` |
 | POST | `/attendance/leaves/{id}/approve\|reject` | `leave`, behind `review_middleware` |
+| GET | `/attendance/employees/{id}/leave-balance` | `employees` + `leave`, behind `review_middleware` |
+| GET/POST/PUT/DELETE | `/attendance/departments...` | `departments`, behind `review_middleware` |
+| GET/POST/PUT/DELETE | `/attendance/designations...` | `departments`, behind `review_middleware` |
 | GET/POST/PUT/DELETE | `/attendance/holidays...` | `holidays`, behind `review_middleware` |
 | GET/POST/PUT/DELETE | `/attendance/leave-types...` | `leave`, behind `review_middleware` |
 | GET | `/attendance/employees/{id}/overtime` | `employees` + `overtime`, behind `review_middleware` |
@@ -590,7 +628,7 @@ Runs against sqlite in-memory by default (Orchestra Testbench) — no service co
 DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=your_test_db DB_USERNAME=... DB_PASSWORD=... composer test
 ```
 
-57 tests / 169 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the check-in/correction HTTP routes, the HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch, overtime/special-working-day pay (the late-ratio deduction boundary, OT capped-and-approval-gated, special-day type auto-detection, pay withheld unless the employee showed up), every management HTTP route (employee/shift/schedule/leave/holiday/leave-type/overtime/special-working-day) — and CSV export/import, notification content, and both print views. Runs on GitHub Actions against MySQL 8 on PHP 8.2/8.3/8.4 on every push.
+67 tests / 196 assertions cover: punch resolution priority (manual over device), correction approve/reject creating real punches, every event, device push matching/unmatched-PIN/idempotency, pull-mode failure escalation, the check-in/correction HTTP routes, the HR core — summary status priority (leave > holiday > day off > absent > late/present), late-minute math, recurring-yearly holidays, an approved leave overriding a stray punch, overtime/special-working-day pay (the late-ratio deduction boundary, OT capped-and-approval-gated, special-day type auto-detection, pay withheld unless the employee showed up), every management HTTP route (employee/shift/schedule/leave/holiday/leave-type/overtime/special-working-day), CSV export/import, notification content, and both print views — plus leave balance arithmetic (including the not-negative clamp), department/designation CRUD and the nulls-out-not-blocks delete behavior, and translated notification/print content (including a caught IP:port placeholder-collision bug). Runs on GitHub Actions against MySQL 8 on PHP 8.2/8.3/8.4 on every push.
 
 **A cross-database gotcha this suite caught:** every `date`-cast column (`Holiday::date`, `Leave::start_date/end_date`, `EmployeeShift::start_date/end_date`, `AttendanceSummary::date`, `OvertimeRecord::date`) gets written by Eloquent through the connection's full datetime format (e.g. `"2026-09-01 00:00:00"`), not a bare date. MySQL's `DATE` columns silently truncate that back down on insert; SQLite stores it verbatim, so an exact-string `where('date', ...)` only ever matches on MySQL. Every such comparison in this codebase uses `whereDate()` instead, which compares just the date part at the SQL level regardless of which of those actually got stored — worth knowing if you query these columns yourself.
 
@@ -623,15 +661,19 @@ Yes. The attendance system uses a polymorphic `subject` relation, so you can att
 
 ### Does it include HR and payroll features?
 
-The optional HR core includes employees, shifts, schedules, holidays, leave, attendance summaries, overtime, special working-day pay, and salary-slip generation.
+The optional HR core includes employees (with Department & Designation), shifts, schedules, holidays, leave (with balance tracking — allowed/used/remaining per type per year), attendance summaries, overtime, special working-day pay, and salary-slip generation.
 
 ### Which Laravel versions are supported?
 
 The package is designed for Laravel 11, Laravel 12, and Laravel 13 and requires PHP 8.2 or higher.
 
+### Is it available in languages other than English?
+
+Every string the package generates itself (notifications, print views, day-status labels) goes through Laravel's own translation system, shipped in English. Publish it (`--tag=attendance-lang`) and add your own locale folder — no code changes, no extra package. See [Localization](#localization).
+
 ## Keywords
 
-Laravel attendance, Laravel attendance package, Laravel attendance management, employee attendance, employee attendance system, biometric attendance, ZKTeco attendance, ZKTeco Laravel integration, ZKTeco ADMS, biometric attendance system, attendance management system, HR management, leave management, shift management, overtime management, payroll, salary management, attendance reports, Laravel HR package.
+Laravel attendance, Laravel attendance package, Laravel attendance management, employee attendance, employee attendance system, biometric attendance, ZKTeco attendance, ZKTeco Laravel integration, ZKTeco ADMS, biometric attendance system, attendance management system, HR management, HRMS, department management, designation management, leave management, leave balance, shift management, overtime management, payroll, salary management, attendance reports, Laravel HR package, multi-language attendance system, localization.
 
 ## License
 

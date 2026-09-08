@@ -34,12 +34,12 @@ class LeaveReviewedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $status = ucfirst($this->leave->status);
-
         return (new MailMessage)
-            ->subject("Leave request {$status}")
-            ->line("Your leave request for {$this->leave->start_date->toDateString()} to {$this->leave->end_date->toDateString()} was {$this->leave->status}.")
-            ->when($this->leave->review_note, fn ($mail) => $mail->line("Note: {$this->leave->review_note}"));
+            ->subject(__('attendance::notifications.leave_reviewed.subject', ['status' => ucfirst($this->leave->status)]))
+            ->line(__('attendance::notifications.leave_reviewed.line', [
+                'start' => $this->leave->start_date->toDateString(), 'end' => $this->leave->end_date->toDateString(), 'status' => $this->leave->status,
+            ]))
+            ->when($this->leave->review_note, fn ($mail) => $mail->line(__('attendance::notifications.leave_reviewed.note_line', ['note' => $this->leave->review_note])));
     }
 
     public function toArray(object $notifiable): array

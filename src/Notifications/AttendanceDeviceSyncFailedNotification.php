@@ -26,10 +26,14 @@ class AttendanceDeviceSyncFailedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Attendance device \"{$this->device->name}\" isn't syncing")
-            ->line("{$this->consecutiveFailures} sync attempt(s) in a row have failed: {$this->reason}")
-            ->line('Last successful sync: '.($this->device->last_synced_at?->diffForHumans() ?? 'never').'.')
-            ->when($this->device->ip, fn ($mail) => $mail->line("Check the device is powered on and reachable at {$this->device->ip}:{$this->device->port}."));
+            ->subject(__('attendance::notifications.device_sync_failed.subject', ['name' => $this->device->name]))
+            ->line(__('attendance::notifications.device_sync_failed.line', ['count' => $this->consecutiveFailures, 'reason' => $this->reason]))
+            ->line(__('attendance::notifications.device_sync_failed.last_sync_line', [
+                'when' => $this->device->last_synced_at?->diffForHumans() ?? __('attendance::notifications.device_sync_failed.never'),
+            ]))
+            ->when($this->device->ip, fn ($mail) => $mail->line(__('attendance::notifications.device_sync_failed.check_line', [
+                'address' => "{$this->device->ip}:{$this->device->port}",
+            ])));
     }
 
     public function toArray(object $notifiable): array

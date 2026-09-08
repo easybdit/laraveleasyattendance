@@ -4,6 +4,15 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- **Leave balance tracking** — `LeaveType::balanceForEmployee()` / `Employee::leaveBalances()` (allowed/used/remaining per type per calendar year, clamped at zero, only counting approved leaves), plus `GET /attendance/employees/{id}/leave-balance?year=`.
+- **`Department` and `Designation` models** (`ATTENDANCE_FEATURE_DEPARTMENTS`) — alongside, not replacing, the existing plain `designation` string column on `Employee`. Deleting a `Department` nulls out any `Designation`/`Employee` pointing at it rather than blocking the delete. Full CRUD over HTTP (`DepartmentController`, `DesignationController`).
+- **Localization** — every string the package generates itself (notification content, print-view labels, day-status labels) now goes through Laravel's translation system (`resources/lang/en/{attendance,notifications,print}.php`, `illuminate/translation` — core Laravel, no new dependency), publishable via `--tag=attendance-lang` for adding other locales.
+- Test suite grew to 67 tests / 196 assertions covering all three.
+
+### Fixed
+- `AttendanceDeviceSyncFailedNotification`'s mail content concatenated the `:ip` and `:port` placeholders with no separator between them (`:ip:port`), which Laravel's translator replaces in a way that silently drops the boundary between the two values — caught while wiring up the localization pass. Now a single `:address` placeholder built in the notification class.
+
 ### Docs
 - `docs/frontend-examples.md` — real, copy-adjustable code for a check-in/check-out widget and a report table built four ways (Vue 3, React, Livewire, plain Blade + vanilla JS), plus a CSRF/auth explainer and a "which one should I pick" guide. The package stays headless (JSON + two print views) by design — this documents *how to consume it*, not a bundled UI; no plan to maintain three separate framework-specific UI packages (see README's new "Building a UI" section).
 
