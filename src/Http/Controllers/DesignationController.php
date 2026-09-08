@@ -2,6 +2,7 @@
 
 namespace Easybdit\LaravelEasyAttendance\Http\Controllers;
 
+use Easybdit\LaravelEasyAttendance\Http\Controllers\Concerns\Paginatable;
 use Easybdit\LaravelEasyAttendance\Models\Designation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -9,9 +10,13 @@ use Illuminate\Routing\Controller;
 
 class DesignationController extends Controller
 {
-    public function index(): JsonResponse
+    use Paginatable;
+
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Designation::with('department:id,name')->orderBy('name')->get());
+        return response()->json(
+            Designation::with('department:id,name')->orderBy('name')->paginate($this->perPage($request))
+        );
     }
 
     public function store(Request $request): JsonResponse

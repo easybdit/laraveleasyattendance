@@ -4,6 +4,11 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING: List endpoints are now paginated.** `GET /attendance/employees`, `/shifts`, `/departments`, `/designations`, `/holidays`, `/leave-types`, and `/devices` now return a standard Laravel paginator object (`{data, current_page, last_page, per_page, total, ...}`) instead of a flat JSON array. Read items from `data`. Control page size with `?per_page=` (default 25, capped at 100) and page with `?page=`. This was a genuine production-readiness gap — an unbounded `->get()` on these indexes would eventually return every row in the table.
+- **`GET /attendance/employees` gains filtering** — `?search=` (matches `name`, `employee_code`, or `email`), `?status=`, `?department_id=`.
+- `HrCoreHttpExtraTest`'s holiday-index assertion updated for the new paginator shape (`assertJsonCount(1, 'data')`); full suite (67 tests / 196 assertions) still green.
+
 ### Added
 - **Leave balance tracking** — `LeaveType::balanceForEmployee()` / `Employee::leaveBalances()` (allowed/used/remaining per type per calendar year, clamped at zero, only counting approved leaves), plus `GET /attendance/employees/{id}/leave-balance?year=`.
 - **`Department` and `Designation` models** (`ATTENDANCE_FEATURE_DEPARTMENTS`) — alongside, not replacing, the existing plain `designation` string column on `Employee`. Deleting a `Department` nulls out any `Designation`/`Employee` pointing at it rather than blocking the delete. Full CRUD over HTTP (`DepartmentController`, `DesignationController`).

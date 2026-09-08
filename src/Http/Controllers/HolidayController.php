@@ -2,6 +2,7 @@
 
 namespace Easybdit\LaravelEasyAttendance\Http\Controllers;
 
+use Easybdit\LaravelEasyAttendance\Http\Controllers\Concerns\Paginatable;
 use Easybdit\LaravelEasyAttendance\Models\Holiday;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -9,9 +10,11 @@ use Illuminate\Routing\Controller;
 
 class HolidayController extends Controller
 {
-    public function index(): JsonResponse
+    use Paginatable;
+
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Holiday::orderBy('date')->get());
+        return response()->json(Holiday::orderBy('date')->paginate($this->perPage($request)));
     }
 
     public function store(Request $request): JsonResponse

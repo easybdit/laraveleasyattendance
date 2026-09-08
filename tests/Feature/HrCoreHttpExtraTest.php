@@ -29,7 +29,7 @@ class HrCoreHttpExtraTest extends TestCase
             'name' => 'Christmas', 'date' => '2026-12-25',
         ])->assertOk()->assertJsonFragment(['name' => 'Christmas']);
 
-        $this->actingAs($admin)->getJson('/attendance/holidays')->assertOk()->assertJsonCount(1);
+        $this->actingAs($admin)->getJson('/attendance/holidays')->assertOk()->assertJsonCount(1, 'data');
 
         $this->actingAs($admin)->deleteJson("/attendance/holidays/{$created['id']}")->assertOk();
         $this->assertNull(Holiday::find($created['id']));

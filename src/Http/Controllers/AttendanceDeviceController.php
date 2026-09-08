@@ -2,6 +2,7 @@
 
 namespace Easybdit\LaravelEasyAttendance\Http\Controllers;
 
+use Easybdit\LaravelEasyAttendance\Http\Controllers\Concerns\Paginatable;
 use Easybdit\LaravelEasyAttendance\Models\AttendanceDevice;
 use Easybdit\LaravelEasyAttendance\Services\AttendanceDeviceSyncService;
 use Easybdit\LaravelEasyAttendance\Services\ZKService;
@@ -11,9 +12,11 @@ use Illuminate\Routing\Controller;
 
 class AttendanceDeviceController extends Controller
 {
-    public function index(): JsonResponse
+    use Paginatable;
+
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(AttendanceDevice::latest()->get());
+        return response()->json(AttendanceDevice::latest()->paginate($this->perPage($request)));
     }
 
     public function store(Request $request): JsonResponse

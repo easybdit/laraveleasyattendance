@@ -2,6 +2,7 @@
 
 namespace Easybdit\LaravelEasyAttendance\Http\Controllers;
 
+use Easybdit\LaravelEasyAttendance\Http\Controllers\Concerns\Paginatable;
 use Easybdit\LaravelEasyAttendance\Models\Shift;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -9,9 +10,11 @@ use Illuminate\Routing\Controller;
 
 class ShiftController extends Controller
 {
-    public function index(): JsonResponse
+    use Paginatable;
+
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Shift::latest()->get());
+        return response()->json(Shift::latest()->paginate($this->perPage($request)));
     }
 
     public function store(Request $request): JsonResponse

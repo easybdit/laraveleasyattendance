@@ -2,6 +2,7 @@
 
 namespace Easybdit\LaravelEasyAttendance\Http\Controllers;
 
+use Easybdit\LaravelEasyAttendance\Http\Controllers\Concerns\Paginatable;
 use Easybdit\LaravelEasyAttendance\Models\Employee;
 use Easybdit\LaravelEasyAttendance\Services\EmployeeCsvImporter;
 use Illuminate\Http\JsonResponse;
@@ -10,9 +11,33 @@ use Illuminate\Routing\Controller;
 
 class EmployeeController extends Controller
 {
-    public function index(): JsonResponse
+    use Paginatable;
+
+    /**
+     * GET /attendance/employees?search=&status=&department_id=&per_page=
+     * search matches name, employee_code, or email.
+     */
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Employee::latest()->get());
+        $query = Employee::query()->latest();
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('employee_code', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+
+        if ($departmentId = $request->input('department_id')) {
+            $query->where('department_id', $departmentId);
+        }
+
+        return response()->json($query->paginate($this->perPage($request)));
     }
 
     public function show(Employee $employee): JsonResponse

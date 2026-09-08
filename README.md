@@ -290,7 +290,7 @@ use Easybdit\LaravelEasyAttendance\Services\{AttendanceSummaryService, SalarySer
        'status' => 'active',
    ]);
    ```
-   `Employee` itself uses `HasAttendance`, so `$employee->checkIn()`, `->checkOut()`, device sync — everything from the sections above — works on it directly. Also manageable over HTTP: `GET/POST /attendance/employees`, `GET/PUT/DELETE /attendance/employees/{id}`.
+   `Employee` itself uses `HasAttendance`, so `$employee->checkIn()`, `->checkOut()`, device sync — everything from the sections above — works on it directly. Also manageable over HTTP: `GET/POST /attendance/employees`, `GET/PUT/DELETE /attendance/employees/{id}` — the index is paginated and supports `?search=&status=&department_id=&per_page=` (see [Routes reference](#routes-reference)).
 
    **Department & Designation** (optional, `ATTENDANCE_FEATURE_DEPARTMENTS`) — proper models instead of the plain `designation` string column above (which still works fine on its own if that's all you need):
    ```php
@@ -575,19 +575,19 @@ __('attendance::attendance.status_short.present'); // 'P'
 | GET | `/attendance/today` | core |
 | GET/POST | `/attendance/corrections` | `corrections` |
 | POST | `/attendance/corrections/{id}/approve\|reject` | `corrections` (behind `review_middleware`) |
-| GET/POST/PUT/DELETE | `/attendance/devices...` | `device_sync` (behind `review_middleware`) |
+| GET/POST/PUT/DELETE | `/attendance/devices...` ⚡ | `device_sync` (behind `review_middleware`) |
 | GET/POST | `/iclock/cdata`, `/iclock/getrequest`, `/iclock/devicecmd` | `device_sync` — public, no prefix, fixed paths (device firmware calls these directly) |
 | GET | `/attendance/reports/daily\|monthly\|employee/{id}\|salary` | `summaries` (`salary` route also needs `features.salary`), behind `review_middleware` |
-| GET/POST/PUT/DELETE | `/attendance/employees...` | `employees`, behind `review_middleware` |
+| GET/POST/PUT/DELETE | `/attendance/employees...` ⚡ | `employees`, behind `review_middleware` |
 | GET/POST | `/attendance/employees/{id}/schedule` | `employees` + `shifts`, behind `review_middleware` |
-| GET/POST/PUT/DELETE | `/attendance/shifts...` | `shifts`, behind `review_middleware` |
+| GET/POST/PUT/DELETE | `/attendance/shifts...` ⚡ | `shifts`, behind `review_middleware` |
 | GET/POST | `/attendance/employees/{id}/leaves` | `employees` + `leave`, behind `review_middleware` |
 | POST | `/attendance/leaves/{id}/approve\|reject` | `leave`, behind `review_middleware` |
 | GET | `/attendance/employees/{id}/leave-balance` | `employees` + `leave`, behind `review_middleware` |
-| GET/POST/PUT/DELETE | `/attendance/departments...` | `departments`, behind `review_middleware` |
-| GET/POST/PUT/DELETE | `/attendance/designations...` | `departments`, behind `review_middleware` |
-| GET/POST/PUT/DELETE | `/attendance/holidays...` | `holidays`, behind `review_middleware` |
-| GET/POST/PUT/DELETE | `/attendance/leave-types...` | `leave`, behind `review_middleware` |
+| GET/POST/PUT/DELETE | `/attendance/departments...` ⚡ | `departments`, behind `review_middleware` |
+| GET/POST/PUT/DELETE | `/attendance/designations...` ⚡ | `departments`, behind `review_middleware` |
+| GET/POST/PUT/DELETE | `/attendance/holidays...` ⚡ | `holidays`, behind `review_middleware` |
+| GET/POST/PUT/DELETE | `/attendance/leave-types...` ⚡ | `leave`, behind `review_middleware` |
 | GET | `/attendance/employees/{id}/overtime` | `employees` + `overtime`, behind `review_middleware` |
 | POST | `/attendance/overtime/{id}/approve\|reject` | `overtime`, behind `review_middleware` |
 | GET/POST | `/attendance/employees/{id}/special-working-days` | `employees` + `special_working_days`, behind `review_middleware` |
@@ -597,6 +597,10 @@ __('attendance::attendance.status_short.present'); // 'P'
 | GET | `/attendance/salary/{id}/print` | `salary`, behind `review_middleware` (printable payslip) |
 
 All the employee/shift/leave/overtime/special-working-day routes above take an explicit `{employee}` — they're HR/admin management endpoints, not "my own" self-service, since `Employee` is a separate concept from whatever `attendance.subject_model` your `Auth::user()` actually is (see [Core concept: the subject model](#core-concept-the-subject-model)). There's deliberately no `store()` for overtime — records are only ever auto-detected (see `OvertimeRecord::detectFromSummary()`), never created by hand over HTTP.
+
+**⚡ Paginated (`employees`, `shifts`, `departments`, `designations`, `holidays`, `leave-types`, `devices`)** — `GET` on these indexes returns a standard Laravel paginator object (`data`, `current_page`, `last_page`, `per_page`, `total`, …), not a flat array. Pass `?per_page=` to control page size (default 25, capped at 100) and `?page=` to move through pages. `GET /attendance/employees` additionally accepts `?search=` (matches name, employee code, or email) and `?status=`/`?department_id=` filters.
+
+> **Breaking change note (pre-1.0):** earlier versions returned a flat JSON array from these index endpoints. If you're upgrading, read the paginated response's items from `data` instead of the top-level array — see the [Changelog](CHANGELOG.md).
 
 ## Tested against real devices
 
