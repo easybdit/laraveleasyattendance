@@ -4,6 +4,8 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-09-09
+
 ### Added
 - **Filament dashboard stats widget** (`Filament\Widgets\AttendanceOverviewWidget`) — today's present/late/absent breakdown, active employee count, and a combined pending-approvals count, all feature-gated and cached for 30s.
 - **Filament navigation badges** on Leave, Overtime, and AttendanceCorrection resources, showing their live pending count (`Filament\Concerns\HasPendingBadge`) — 30s cache, invalidated immediately by that resource's own Approve/Reject action.
