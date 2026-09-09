@@ -56,14 +56,14 @@ class FilamentTest extends TestCase
     {
         config(['attendance.features.employees' => true]);
 
-        $this->actingAs(User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => 'x']));
+        $this->actingAs(User::create(['name' => 'Admin', 'email' => 'admin@example.com']));
 
         $this->assertTrue(EmployeeResource::canAccess());
     }
 
     public function test_employee_can_be_created_through_the_filament_form(): void
     {
-        $user = User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => 'x']);
+        $user = User::create(['name' => 'Admin', 'email' => 'admin@example.com']);
         $this->actingAs($user);
 
         Livewire::test(ManageEmployees::class)
@@ -83,8 +83,8 @@ class FilamentTest extends TestCase
 
     public function test_approving_a_correction_through_the_filament_action_creates_punches(): void
     {
-        $subject = User::create(['name' => 'Employee One', 'email' => 'e1@example.com', 'password' => 'x']);
-        $reviewer = User::create(['name' => 'Reviewer', 'email' => 'reviewer@example.com', 'password' => 'x']);
+        $subject = User::create(['name' => 'Employee One', 'email' => 'e1@example.com']);
+        $reviewer = User::create(['name' => 'Reviewer', 'email' => 'reviewer@example.com']);
         $this->actingAs($reviewer);
 
         $correction = AttendanceCorrection::create([
