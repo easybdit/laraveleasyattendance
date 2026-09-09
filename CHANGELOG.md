@@ -4,6 +4,8 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-09-09
+
 ### Changed
 - **Every model now has a full `@property`/`@property-read` docblock** — every column, cast type, and relation is now typed for IDE autocomplete (PhpStorm, Intelephense) in consuming apps, not just for PHPStan. Shrank `phpstan-baseline.neon` from 154 entries to 16 in the process — everything resolvable without weakening a real type got fixed outright:
   - `Leave::daysCount()` now explicitly casts `diffInDays()`'s result to `int` (it's typed `float` upstream for sub-day precision that can't occur between two date-only casts, so the method's own `int` return type was already implicitly correct — just not statically provable before).
