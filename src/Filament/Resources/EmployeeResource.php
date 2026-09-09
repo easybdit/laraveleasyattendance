@@ -5,9 +5,12 @@ namespace Easybdit\LaravelEasyAttendance\Filament\Resources;
 use BackedEnum;
 use Easybdit\LaravelEasyAttendance\Filament\Concerns\RequiresFeature;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\EmployeeResource\Pages\ManageEmployees;
+use Easybdit\LaravelEasyAttendance\Filament\Resources\EmployeeResource\Pages\ViewEmployee;
+use Easybdit\LaravelEasyAttendance\Filament\Resources\EmployeeResource\RelationManagers\LeavesRelationManager;
 use Easybdit\LaravelEasyAttendance\Models\Employee;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
@@ -144,15 +147,24 @@ class EmployeeResource extends Resource
                     ->visible(fn () => (bool) config('attendance.features.departments')),
             ])
             ->recordActions([
+                ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return config('attendance.features.leave')
+            ? [LeavesRelationManager::class]
+            : [];
     }
 
     public static function getPages(): array
     {
         return [
             'index' => ManageEmployees::route('/'),
+            'view' => ViewEmployee::route('/{record}'),
         ];
     }
 }

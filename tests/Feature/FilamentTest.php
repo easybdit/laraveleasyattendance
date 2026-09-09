@@ -7,6 +7,8 @@ use Easybdit\LaravelEasyAttendance\Filament\Resources\AttendanceCorrectionResour
 use Easybdit\LaravelEasyAttendance\Filament\Resources\AttendanceCorrectionResource\Pages\ManageAttendanceCorrections;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\EmployeeResource;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\EmployeeResource\Pages\ManageEmployees;
+use Easybdit\LaravelEasyAttendance\Filament\Resources\EmployeeResource\Pages\ViewEmployee;
+use Easybdit\LaravelEasyAttendance\Filament\Resources\EmployeeResource\RelationManagers\LeavesRelationManager;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\LeaveResource;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\LeaveResource\Pages\ManageLeaves;
 use Easybdit\LaravelEasyAttendance\Filament\Widgets\AttendanceOverviewWidget;
@@ -163,5 +165,36 @@ class FilamentTest extends TestCase
         Livewire::test(AttendanceOverviewWidget::class)
             ->assertOk()
             ->assertSee('Pending approvals');
+    }
+
+    public function test_employee_leaves_relation_manager_lists_and_approves_from_the_profile_page(): void
+    {
+        $employee = Employee::create([
+            'employee_code' => 'E-300',
+            'name' => 'Relation Manager Employee',
+            'basic_salary' => 1000,
+        ]);
+        $leaveType = LeaveType::create(['name' => 'Sick']);
+        $leave = Leave::create([
+            'employee_id' => $employee->id,
+            'leave_type_id' => $leaveType->id,
+            'start_date' => '2026-03-01',
+            'end_date' => '2026-03-01',
+            'reason' => 'Fever',
+            'status' => 'pending',
+        ]);
+        $this->actingAs(User::create(['name' => 'Admin', 'email' => 'rm-admin@example.com']));
+
+        Livewire::test(ViewEmployee::class, ['record' => $employee->getKey()])
+            ->assertOk();
+
+        Livewire::test(LeavesRelationManager::class, [
+            'ownerRecord' => $employee,
+            'pageClass' => ViewEmployee::class,
+        ])
+            ->assertCanSeeTableRecords([$leave])
+            ->callTableAction('approve', $leave);
+
+        $this->assertSame('approved', $leave->fresh()->status);
     }
 }

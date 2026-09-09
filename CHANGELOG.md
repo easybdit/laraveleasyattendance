@@ -4,6 +4,9 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- **EmployeeResource gains a profile page** (`Pages\ViewEmployee`, reached via the table's View action) with a **Leaves** relation manager tab — an employee's leave history with the same Approve/Reject actions as `LeaveResource`, without leaving their profile. Every other resource stays on the single-page modal-CRUD pattern; relation manager tabs can only render on a real resource page, which is the one thing a modal-only resource can't host.
+
 ## [2.2.0] - 2026-09-09
 
 ### Added

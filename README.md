@@ -577,7 +577,7 @@ Highlights:
 - **Navigation badges** on Leave, Overtime, and Corrections show their live pending count — same 30s cache as the dashboard widget, invalidated immediately by the resource's own Approve/Reject action so it doesn't sit stale after you just acted on it. Backed by a new migration indexing `status` on all three tables (none of their existing composite indexes lead with `status`, so a bare pending-count query would otherwise be a full table scan at scale).
 - **Attendance Summaries** is view/list only (no create/edit/delete) — it's generated data, rebuilt by `attendance:build-summaries`, so the UI doesn't pretend you can hand-edit it.
 - The `Attendance`/`AttendanceCorrection` subject picker targets your single configured `attendance.subject_model` with a searchable Select, instead of a two-step polymorphic type-then-record picker — matches how the overwhelming majority of installs use it.
-- Every resource uses Filament's single-page "Manage" pattern (list + modal create/edit) — no separate edit-page routes to add to your panel.
+- Every resource uses Filament's single-page "Manage" pattern (list + modal create/edit) — no separate edit-page routes to add to your panel. The one exception is **Employee**, which also gets a profile page (reached via the table's View action) showing a **Leaves** tab — an employee's leave history, with the same Approve/Reject actions, right from their profile instead of only from the flat LeaveResource list.
 
 ## Table names
 
