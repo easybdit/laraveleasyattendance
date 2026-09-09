@@ -3,7 +3,9 @@
 namespace Easybdit\LaravelEasyAttendance\Tests;
 
 use Easybdit\LaravelEasyAttendance\LaravelEasyAttendanceServiceProvider;
+use Easybdit\LaravelEasyAttendance\Tests\Fixtures\TestPanelProvider;
 use Easybdit\LaravelEasyAttendance\Tests\Fixtures\User;
+use Filament\PanelProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Orchestra\Testbench\TestCase as Orchestra;
@@ -25,7 +27,17 @@ abstract class TestCase extends Orchestra
 
     protected function getPackageProviders($app): array
     {
-        return [LaravelEasyAttendanceServiceProvider::class];
+        $providers = [LaravelEasyAttendanceServiceProvider::class];
+
+        // filament/filament is a suggested, not required, dependency —
+        // only registered here (for FilamentTest) when it's actually
+        // installed, same as a consuming app would only add it once
+        // they've composer required Filament themselves.
+        if (class_exists(PanelProvider::class)) {
+            $providers[] = TestPanelProvider::class;
+        }
+
+        return $providers;
     }
 
     protected function defineDatabaseMigrations(): void

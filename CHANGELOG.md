@@ -4,6 +4,9 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- **Optional Filament v5 admin panel integration** — `Easybdit\LaravelEasyAttendance\Filament\EasyAttendancePlugin`, ~14 resources covering every module (Attendance, Corrections, Device Sync, Attendance Summaries, Employees, Departments, Designations, Shifts, Holidays, Leave Types, Leave, Overtime, Special Working Days, Salary Slips). `filament/filament` is a suggested, not required, dependency — nothing under `src/Filament/` is autoloaded into your app unless you `composer require filament/filament` and register `EasyAttendancePlugin::make()` on your own panel. Every resource is individually gated behind the same `attendance.features.*` flag its table/routes already check (`Filament\Concerns\RequiresFeature`), and blocks direct URL access, not just navigation, when its feature is off. Leave/Overtime/AttendanceCorrection resources ship one-click Approve/Reject actions wired straight to the package's own `approve()`/`reject()` model methods. See the README's new [Filament Admin Panel](README.md#filament-admin-panel) section.
+
 ## [2.0.0] - 2026-09-08
 
 ### Security

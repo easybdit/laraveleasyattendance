@@ -41,6 +41,7 @@ Laravel Easy Attendance is designed as a reusable attendance and HR package for 
 - Polymorphic attendance subjects for `User`, `Employee`, `Staff`, or another model
 - CSV export for every report, CSV bulk-import for employees, printable payslip/attendance-sheet views, and ready-made notification content for the key events — all zero external dependencies
 - Leave balance tracking (allowed/used/remaining per leave type per year), Department & Designation models, and full localization (English shipped, publishable for any other language)
+- Optional [Filament v5 admin panel](#filament-admin-panel) — ~14 resources covering every module, feature-flag-gated, with one-click approve/reject on Leave/Overtime/Corrections
 
 ### Use cases
 
@@ -80,6 +81,7 @@ Laravel Easy Attendance can be used for:
   - [Overtime + special working day, worked example](#overtime--special-working-day-worked-example)
 - [Exports, bulk import, notifications & print views](#exports-bulk-import-notifications--print-views)
   - [Localization](#localization)
+- [Filament Admin Panel](#filament-admin-panel)
 - [Table names](#table-names)
 - [Configuration reference](#configuration-reference)
 - [Routes reference](#routes-reference)
@@ -544,6 +546,37 @@ __('attendance::notifications.late.subject', ['name' => $employee->name]);
 __('attendance::attendance.status_short.present'); // 'P'
 ```
 
+## Filament Admin Panel
+
+A full click-to-manage UI over every module this package ships — check-in/out, corrections, device sync, employees, shifts, leave, holidays, overtime, special working days, and salary slips — built entirely on the package's own public API (models, config, the `approve()`/`reject()` methods on `Leave`/`OvertimeRecord`/`AttendanceCorrection`).
+
+[Filament](https://filamentphp.com) itself is a **suggested, not required**, dependency — this package works standalone with zero UI, and the ~30 resource/page classes under `Easybdit\LaravelEasyAttendance\Filament\` are never touched unless you opt in:
+
+```bash
+composer require filament/filament
+```
+
+```php
+// app/Providers/Filament/AdminPanelProvider.php
+use Easybdit\LaravelEasyAttendance\Filament\EasyAttendancePlugin;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        // ...
+        ->plugin(EasyAttendancePlugin::make());
+}
+```
+
+That's it — every resource is individually gated by the same `attendance.features.*` flag its table/routes already check (see [Feature toggles](#configuration-reference)), so a minimal check-in/out-only install just shows the **Attendance** resource, and turning on `ATTENDANCE_FEATURE_HR_CORE` lights up **Employees, Departments, Designations, Shifts, Holidays, Leave Types, Leave, Overtime, Special Working Days, and Salary Slips** without any extra config on the Filament side. A resource for a module you haven't enabled is hidden from navigation *and* refuses direct URL access — not just hidden, actually blocked.
+
+Highlights:
+
+- **Leave, Overtime, and Attendance Correction** resources ship one-click **Approve/Reject** row actions that call the package's own `approve()`/`reject()` model methods — the same code path the HTTP API uses, so events fire and salary/attendance stay consistent either way.
+- **Attendance Summaries** is view/list only (no create/edit/delete) — it's generated data, rebuilt by `attendance:build-summaries`, so the UI doesn't pretend you can hand-edit it.
+- The `Attendance`/`AttendanceCorrection` subject picker targets your single configured `attendance.subject_model` with a searchable Select, instead of a two-step polymorphic type-then-record picker — matches how the overwhelming majority of installs use it.
+- Every resource uses Filament's single-page "Manage" pattern (list + modal create/edit) — no separate edit-page routes to add to your panel.
+
 ## Table names
 
 Every table this package owns is prefixed `easyattendance_` by default (`easyattendance_employees`, `easyattendance_shifts`, `easyattendance_leaves`, ...) — a generic-sounding name like "employees" or "leaves" is exactly the kind of table your app, or another package, might already have, so this package never installs one unprefixed.
@@ -702,7 +735,7 @@ Every string the package generates itself (notifications, print views, day-statu
 
 ## Keywords
 
-Laravel attendance, Laravel attendance package, Laravel attendance management, employee attendance, employee attendance system, biometric attendance, ZKTeco attendance, ZKTeco Laravel integration, ZKTeco ADMS, biometric attendance system, attendance management system, HR management, HRMS, department management, designation management, leave management, leave balance, shift management, overtime management, payroll, salary management, attendance reports, Laravel HR package, multi-language attendance system, localization.
+Laravel attendance, Laravel attendance package, Laravel attendance management, employee attendance, employee attendance system, biometric attendance, ZKTeco attendance, ZKTeco Laravel integration, ZKTeco ADMS, biometric attendance system, attendance management system, HR management, HRMS, department management, designation management, leave management, leave balance, shift management, overtime management, payroll, salary management, attendance reports, Laravel HR package, multi-language attendance system, localization, Filament attendance plugin, Filament HR panel, Filament admin panel package.
 
 ## License
 

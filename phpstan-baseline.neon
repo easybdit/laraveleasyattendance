@@ -19,6 +19,36 @@ parameters:
 			path: src/Console/Commands/SyncAttendanceDevices.php
 
 		-
+			message: '#^Access to an undefined property Easybdit\\LaravelEasyAttendance\\Models\\AttendanceCorrection\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Filament/Resources/AttendanceCorrectionResource.php
+
+		-
+			message: '#^Access to an undefined property Easybdit\\LaravelEasyAttendance\\Models\\AttendanceCorrection\:\:\$subject\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/AttendanceCorrectionResource.php
+
+		-
+			message: '#^Access to an undefined property Easybdit\\LaravelEasyAttendance\\Models\\Attendance\:\:\$subject\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/AttendanceResource.php
+
+		-
+			message: '#^Access to an undefined property Easybdit\\LaravelEasyAttendance\\Models\\Leave\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Filament/Resources/LeaveResource.php
+
+		-
+			message: '#^Access to an undefined property Easybdit\\LaravelEasyAttendance\\Models\\OvertimeRecord\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Filament/Resources/OvertimeRecordResource.php
+
+		-
 			message: '#^Access to an undefined property Easybdit\\LaravelEasyAttendance\\Models\\AttendanceDevice\:\:\$ip\.$#'
 			identifier: property.notFound
 			count: 1

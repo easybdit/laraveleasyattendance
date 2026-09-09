@@ -1,7 +1,7 @@
 {
     "name": "easybdit/laraveleasyattendance",
     "description": "Drop-in attendance, HR, and payroll core for any Laravel app: check-in/out, corrections, ZKTeco device sync (pull + ADMS push), shifts, leave, holidays, overtime, salary generation, and reports.",
-    "keywords": ["laravel", "attendance", "hr", "payroll", "salary", "zkteco", "biometric", "check-in", "timesheet", "leave", "overtime"],
+    "keywords": ["laravel", "attendance", "hr", "payroll", "salary", "zkteco", "biometric", "check-in", "timesheet", "leave", "overtime", "filament"],
     "license": "MIT",
     "type": "library",
     "authors": [
@@ -20,7 +20,11 @@
         "orchestra/testbench": "^9.0|^10.0|^11.0",
         "phpunit/phpunit": "^10.0|^11.0|^12.0",
         "laravel/pint": "^1.20",
-        "larastan/larastan": "^3.11"
+        "larastan/larastan": "^3.11",
+        "filament/filament": "^5.8"
+    },
+    "suggest": {
+        "filament/filament": "Required to use the optional Filament admin panel resources (Easybdit\\LaravelEasyAttendance\\Filament\\EasyAttendancePlugin) — see the README's Filament Admin Panel section."
     },
     "scripts": {
         "test": "vendor/bin/phpunit"
