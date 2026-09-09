@@ -1,6 +1,8 @@
 # Laravel Easy Attendance — Laravel Attendance Management & ZKTeco Biometric Integration
 
 [![tests](https://github.com/easybdit/laraveleasyattendance/actions/workflows/tests.yml/badge.svg)](https://github.com/easybdit/laraveleasyattendance/actions/workflows/tests.yml)
+[![lint](https://github.com/easybdit/laraveleasyattendance/actions/workflows/lint.yml/badge.svg)](https://github.com/easybdit/laraveleasyattendance/actions/workflows/lint.yml)
+[![codecov](https://codecov.io/gh/easybdit/laraveleasyattendance/branch/main/graph/badge.svg)](https://codecov.io/gh/easybdit/laraveleasyattendance)
 [![Latest Stable Version](https://img.shields.io/packagist/v/easybdit/laraveleasyattendance.svg)](https://packagist.org/packages/easybdit/laraveleasyattendance)
 [![Total Downloads](https://img.shields.io/packagist/dt/easybdit/laraveleasyattendance.svg)](https://packagist.org/packages/easybdit/laraveleasyattendance)
 [![PHP Version](https://img.shields.io/badge/PHP-8.2%2B-777BB4.svg)](https://www.php.net/)

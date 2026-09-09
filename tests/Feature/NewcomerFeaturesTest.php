@@ -2,13 +2,14 @@
 
 namespace Easybdit\LaravelEasyAttendance\Tests\Feature;
 
+use Easybdit\LaravelEasyAttendance\Models\AttendanceDevice;
 use Easybdit\LaravelEasyAttendance\Models\Department;
 use Easybdit\LaravelEasyAttendance\Models\Designation;
 use Easybdit\LaravelEasyAttendance\Models\Employee;
 use Easybdit\LaravelEasyAttendance\Models\LeaveType;
-use Easybdit\LaravelEasyAttendance\Notifications\AttendanceMarkedLateNotification;
 use Easybdit\LaravelEasyAttendance\Notifications\AttendanceDeviceSyncFailedNotification;
-use Easybdit\LaravelEasyAttendance\Models\AttendanceDevice;
+use Easybdit\LaravelEasyAttendance\Notifications\AttendanceMarkedLateNotification;
+use Easybdit\LaravelEasyAttendance\Services\SalaryService;
 use Easybdit\LaravelEasyAttendance\Tests\Fixtures\User;
 use Easybdit\LaravelEasyAttendance\Tests\TestCase;
 
@@ -146,7 +147,7 @@ class NewcomerFeaturesTest extends TestCase
     {
         $admin = $this->actor();
         $employee = Employee::create(['employee_code' => 'E-956', 'name' => 'Print Lang', 'basic_salary' => 20000, 'allowances' => [], 'status' => 'active']);
-        $slip = (new \Easybdit\LaravelEasyAttendance\Services\SalaryService)->generate($employee, 2026, 5);
+        $slip = (new SalaryService)->generate($employee, 2026, 5);
 
         $response = $this->actingAs($admin)->get("/attendance/salary/{$slip->id}/print");
 

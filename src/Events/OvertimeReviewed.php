@@ -14,7 +14,5 @@ class OvertimeReviewed
 {
     use Dispatchable, SerializesModels;
 
-    public function __construct(public OvertimeRecord $record)
-    {
-    }
+    public function __construct(public OvertimeRecord $record) {}
 }

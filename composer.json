@@ -18,7 +18,9 @@
     },
     "require-dev": {
         "orchestra/testbench": "^9.0|^10.0|^11.0",
-        "phpunit/phpunit": "^10.0|^11.0|^12.0"
+        "phpunit/phpunit": "^10.0|^11.0|^12.0",
+        "laravel/pint": "^1.31",
+        "larastan/larastan": "^3.11"
     },
     "scripts": {
         "test": "vendor/bin/phpunit"

@@ -2,6 +2,8 @@
 
 namespace Easybdit\LaravelEasyAttendance\Support\Zk\Internal;
 
+use Easybdit\LaravelEasyAttendance\Support\Zk\ZkClient;
+
 /**
  * ZK communication protocol constants and byte-level packet helpers.
  *
@@ -18,21 +20,27 @@ class ZkUtil
     const USHRT_MAX = 65535;
 
     const CMD_CONNECT = 1000;
+
     const CMD_EXIT = 1001;
 
     const CMD_ACK_OK = 2000;
+
     const CMD_ACK_UNAUTH = 2005;
+
     const CMD_ACK_AUTH = 1102;
 
     const CMD_PREPARE_DATA = 1500;
 
     const CMD_USER_TEMP_RRQ = 9;
+
     const CMD_OPTIONS_WRQ = 12;
+
     const CMD_ATT_LOG_RRQ = 13;
 
     const FCT_USER = 5;
 
     const COMMAND_TYPE_GENERAL = 'general';
+
     const COMMAND_TYPE_DATA = 'data';
 
     public static function trimDeviceData($data, $command = '')
@@ -91,7 +99,7 @@ class ZkUtil
      * indicating that data packets are to be sent. Returns the amount of
      * bytes that are going to be sent.
      */
-    public static function getSize(\Easybdit\LaravelEasyAttendance\Support\Zk\ZkClient $self)
+    public static function getSize(ZkClient $self)
     {
         $u = unpack('H2h1/H2h2/H2h3/H2h4/H2h5/H2h6/H2h7/H2h8', substr($self->_data_recv, 0, 8));
         $command = hexdec($u['h2'].$u['h1']);
@@ -188,7 +196,7 @@ class ZkUtil
 
         $k = unpack('S2', $k);
         $k = pack('S2', $k[2], $k[1]);
-        $B = 0xff & 50;
+        $B = 0xFF & 50;
         $k = unpack('C4', $k);
 
         return pack('C4', $k[1] ^ $B, $k[2] ^ $B, $B, $k[4] ^ $B);
@@ -213,7 +221,7 @@ class ZkUtil
      *
      * @param  bool  $first  if false, strip the first 8 bytes for the first chunk too
      */
-    public static function recData(\Easybdit\LaravelEasyAttendance\Support\Zk\ZkClient $self, $maxErrors = 10, $first = true)
+    public static function recData(ZkClient $self, $maxErrors = 10, $first = true)
     {
         $data = '';
         $bytes = self::getSize($self);

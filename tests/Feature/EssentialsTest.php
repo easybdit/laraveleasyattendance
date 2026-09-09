@@ -3,7 +3,6 @@
 namespace Easybdit\LaravelEasyAttendance\Tests\Feature;
 
 use Easybdit\LaravelEasyAttendance\Models\Employee;
-use Easybdit\LaravelEasyAttendance\Models\SalarySlip;
 use Easybdit\LaravelEasyAttendance\Notifications\AttendanceMarkedLateNotification;
 use Easybdit\LaravelEasyAttendance\Notifications\LeaveReviewedNotification;
 use Easybdit\LaravelEasyAttendance\Services\AttendanceSummaryService;

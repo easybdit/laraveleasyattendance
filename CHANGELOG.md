@@ -4,20 +4,12 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-08
+
 ### Security
 - **ADMS push hardening.** These routes are public and unauthenticated by protocol necessity (a device carries nothing but its serial number), so three mitigations on top of that: an optional `config('attendance.device_sync.adms_verify_ip')` (off by default) rejects a push whose source IP doesn't match the device's registered `ip`; `throttle` middleware (`adms_throttle`, default `throttle:60,1`) is now applied to all four ADMS routes — previously none; a single push batch is capped at `adms_max_lines_per_push` (default 5000) ATTLOG lines, logging and dropping the remainder instead of processing an unbounded body.
 - **CSV export formula-injection guard.** A cell whose value starts with `=`, `+`, `-`, or `@` (a name or note field, say) now gets a leading apostrophe in every CSV export — without it, opening the file in Excel/Sheets would execute that cell as a live formula. See `Http\Controllers\Concerns\ExportsCsv::escapeCsvFormula()`.
 - **`HasAttendance::checkIn()`/`checkOut()` no longer accept arbitrary attribute overrides.** Only `time` and `meta` pass through to the created `Attendance` row now (`PUNCH_ATTRIBUTE_ALLOWLIST`) — previously a caller could pass `type`/`source`/`is_manual`/`device_id` and have them silently override what the method itself computes, a footgun for any downstream controller that naively forwards `$request->all()` into this public API.
-
-### Changed
-- `AttendanceSummaryService::buildForDate()` no longer re-queries `Holiday::onDate($date)` once per employee — resolved once per call and passed into `buildOne()`, whose signature grew an optional third `$holiday` parameter (fully backward compatible: omit it and `buildOne()` resolves the holiday itself, exactly as before).
-- New index on `employees.status` — the `?status=` filter and `AttendanceSummaryService::buildForDate()`'s own `where('status', 'active')` were both unindexed equality lookups.
-- Full suite grew to 71 tests / 207 assertions covering all of the above.
-
-### Upgrade note
-The three new `device_sync.adms_*` keys are nested inside the existing `device_sync` config array — if you've already run `php artisan vendor:publish --tag=attendance-config`, your published copy won't pick them up automatically (Laravel's config merge only fills in a *missing top-level* key, not a missing key nested inside one you already have). Either delete your published `config/attendance.php` and let the package's default merge back in, or add the three `adms_*` keys to your copy by hand — see `config/attendance.php` in the package for their defaults.
-
-## [2.0.0] - 2026-09-08
 
 ### Changed
 - **BREAKING: every package table is now prefixed `easyattendance_`.** `employees`, `shifts`, `employee_shifts`, `holidays`, `leave_types`, `leaves`, `salary_slips`, `overtime_records`, `special_working_days`, `departments`, `designations` are exactly the kind of generic table names a host app (or another package) is likely to already have — this closes that collision risk for good, and brings the other four tables (`attendances`, `attendance_corrections`, `attendance_devices`, `attendance_summaries`, previously `attendance_`-prefixed only) in line with the same convention. Every table name is individually overridable via the new `config('attendance.table_names')` array — same shape as `spatie/laravel-permission`'s `table_names` config — see the README's new [Table names](README.md#table-names) section. Shipped as a major version, on the very first day of `v1.0.0`, specifically because the real-world cost of breaking this now (4 Packagist installs) is essentially zero compared to doing it later against real user data.
@@ -25,7 +17,13 @@ The three new `device_sync.adms_*` keys are nested inside the existing `device_s
   - Every model now resolves its table via the new `Models\Concerns\HasPackageTable` trait instead of Eloquent's default naming convention; every migration's `Schema::create()`/`constrained()` calls read the same `table_names` config.
   - Validation rules that referenced a table by raw string (`unique:employees,...`, `exists:departments,id`) now use `Rule::unique(Employee::class, ...)`/`Rule::exists(Department::class, ...)` instead, so they keep resolving correctly regardless of what `table_names` is set to.
   - A few composite indexes/unique constraints (`employee_shifts`, `leaves`, `salary_slips`, `overtime_records`, `special_working_days`, and the two `attendances`/`attendance_corrections` subject indexes) now have an explicit short name instead of Laravel's auto-generated `{table}_{columns}_index` — the auto-generated name for `employee_shifts`' composite index exceeded MySQL's 64-character identifier limit once the longer prefix was applied, and an explicit name keeps every index safe regardless of how long a custom `table_names` override might be.
-- Full suite (67 tests / 196 assertions) green against MySQL with the new prefixed tables.
+- `AttendanceSummaryService::buildForDate()` no longer re-queries `Holiday::onDate($date)` once per employee — resolved once per call and passed into `buildOne()`, whose signature grew an optional third `$holiday` parameter (fully backward compatible: omit it and `buildOne()` resolves the holiday itself, exactly as before).
+- New index on `employees.status` — the `?status=` filter and `AttendanceSummaryService::buildForDate()`'s own `where('status', 'active')` were both unindexed equality lookups.
+- Full suite grew to 71 tests / 207 assertions covering all of the above.
+
+### Upgrade note
+- There is no automatic migration for the table-prefix change above — this only matters if you've already run `php artisan migrate` on `v1.x`. Either start fresh (`php artisan migrate:fresh`, only safe if you don't need to keep existing data), or write your own migration renaming each old table to its new `easyattendance_*` name (see `config/attendance.php` for the full old-name → new-name map) before upgrading the package.
+- The three new `device_sync.adms_*` keys are nested inside the existing `device_sync` config array — if you've already run `php artisan vendor:publish --tag=attendance-config`, your published copy won't pick them up automatically (Laravel's config merge only fills in a *missing top-level* key, not a missing key nested inside one you already have). Either delete your published `config/attendance.php` and let the package's default merge back in, or add the three `adms_*` keys to your copy by hand — see `config/attendance.php` in the package for their defaults.
 
 ## [1.0.0] - 2026-09-08
 

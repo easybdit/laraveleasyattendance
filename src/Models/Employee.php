@@ -6,6 +6,7 @@ use Easybdit\LaravelEasyAttendance\Events\LeaveRequested;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Easybdit\LaravelEasyAttendance\Traits\HasAttendance;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 /**
  * The package's own ready-made "subject" — for anyone who wants a real
@@ -92,9 +93,9 @@ class Employee extends Model
     /**
      * Allowed/used/remaining for every leave type, for one calendar year.
      *
-     * @return \Illuminate\Support\Collection<int, array{leave_type_id: int, leave_type: string, allowed: ?int, used: int, remaining: ?int}>
+     * @return Collection<int, array{leave_type_id: int, leave_type: string, allowed: ?int, used: int, remaining: ?int}>
      */
-    public function leaveBalances(?int $year = null): \Illuminate\Support\Collection
+    public function leaveBalances(?int $year = null): Collection
     {
         return LeaveType::all()->map(fn (LeaveType $type) => array_merge(
             ['leave_type_id' => $type->id, 'leave_type' => $type->name],

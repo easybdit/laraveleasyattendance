@@ -46,7 +46,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: mbstring, pdo_mysql, bcmath
-          coverage: none
+          coverage: ${{ matrix.php == '8.3' && 'pcov' || 'none' }}
 
       - name: Install dependencies
         run: composer update --prefer-dist --no-interaction --no-progress
@@ -56,4 +56,16 @@ jobs:
           until mysqladmin ping -h127.0.0.1 -uroot --silent; do sleep 2; done
 
       - name: Run tests
+        if: matrix.php != '8.3'
         run: vendor/bin/phpunit
+
+      - name: Run tests with coverage
+        if: matrix.php == '8.3'
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml
+
+      - name: Upload coverage to Codecov
+        if: matrix.php == '8.3'
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false

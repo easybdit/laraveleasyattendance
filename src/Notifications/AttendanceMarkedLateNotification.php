@@ -29,8 +29,7 @@ class AttendanceMarkedLateNotification extends Notification
         public Employee $employee,
         public string $date,
         public int $lateMinutes,
-    ) {
-    }
+    ) {}
 
     public function via(object $notifiable): array
     {

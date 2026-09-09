@@ -19,6 +19,5 @@ class AttendanceMarkedLate
         public Employee $employee,
         public string $date,
         public int $lateMinutes,
-    ) {
-    }
+    ) {}
 }

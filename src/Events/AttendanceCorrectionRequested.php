@@ -10,7 +10,5 @@ class AttendanceCorrectionRequested
 {
     use Dispatchable, SerializesModels;
 
-    public function __construct(public AttendanceCorrection $correction)
-    {
-    }
+    public function __construct(public AttendanceCorrection $correction) {}
 }

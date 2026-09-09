@@ -10,7 +10,5 @@ class LeaveRequested
 {
     use Dispatchable, SerializesModels;
 
-    public function __construct(public Leave $leave)
-    {
-    }
+    public function __construct(public Leave $leave) {}
 }

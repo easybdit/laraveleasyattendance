@@ -2,6 +2,7 @@
 
 namespace Easybdit\LaravelEasyAttendance\Http\Controllers;
 
+use Carbon\Carbon;
 use Easybdit\LaravelEasyAttendance\Models\AttendanceSummary;
 use Easybdit\LaravelEasyAttendance\Models\SalarySlip;
 use Illuminate\Http\Request;
@@ -34,7 +35,7 @@ class AttendancePrintController extends Controller
     {
         $year = (int) $request->input('year', now()->year);
         $month = (int) $request->input('month', now()->month);
-        $daysInMonth = \Carbon\Carbon::create($year, $month, 1)->daysInMonth;
+        $daysInMonth = Carbon::create($year, $month, 1)->daysInMonth;
         $days = range(1, $daysInMonth);
 
         $employees = AttendanceSummary::with('employee:id,name,employee_code')
@@ -64,7 +65,7 @@ class AttendancePrintController extends Controller
             ->values();
 
         return view('attendance::print.monthly-report', [
-            'monthLabel' => \Carbon\Carbon::create($year, $month, 1)->format('F Y'),
+            'monthLabel' => Carbon::create($year, $month, 1)->format('F Y'),
             'days' => $days,
             'employees' => $employees,
         ]);

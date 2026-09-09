@@ -10,7 +10,5 @@ class AttendanceRecorded
 {
     use Dispatchable, SerializesModels;
 
-    public function __construct(public Attendance $attendance)
-    {
-    }
+    public function __construct(public Attendance $attendance) {}
 }

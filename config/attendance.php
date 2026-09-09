@@ -78,7 +78,7 @@ return [
     'features' => [
         'corrections' => env('ATTENDANCE_FEATURE_CORRECTIONS', true),
         'device_sync' => env('ATTENDANCE_FEATURE_DEVICE_SYNC', false),
-        'summaries'   => env('ATTENDANCE_FEATURE_SUMMARIES', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'summaries' => env('ATTENDANCE_FEATURE_SUMMARIES', env('ATTENDANCE_FEATURE_HR_CORE', false)),
 
         // HR core — each independently toggleable (off by default, so a
         // pure check-in/out install never pays for tables it doesn't use),
@@ -87,11 +87,11 @@ return [
         // whole employee/shift/holiday/leave/summary/salary stack on at
         // once instead of six separate env lines.
         'employees' => env('ATTENDANCE_FEATURE_EMPLOYEES', env('ATTENDANCE_FEATURE_HR_CORE', false)),
-        'shifts'    => env('ATTENDANCE_FEATURE_SHIFTS', env('ATTENDANCE_FEATURE_HR_CORE', false)),
-        'holidays'  => env('ATTENDANCE_FEATURE_HOLIDAYS', env('ATTENDANCE_FEATURE_HR_CORE', false)),
-        'leave'     => env('ATTENDANCE_FEATURE_LEAVE', env('ATTENDANCE_FEATURE_HR_CORE', false)),
-        'salary'    => env('ATTENDANCE_FEATURE_SALARY', env('ATTENDANCE_FEATURE_HR_CORE', false)),
-        'overtime'  => env('ATTENDANCE_FEATURE_OVERTIME', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'shifts' => env('ATTENDANCE_FEATURE_SHIFTS', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'holidays' => env('ATTENDANCE_FEATURE_HOLIDAYS', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'leave' => env('ATTENDANCE_FEATURE_LEAVE', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'salary' => env('ATTENDANCE_FEATURE_SALARY', env('ATTENDANCE_FEATURE_HR_CORE', false)),
+        'overtime' => env('ATTENDANCE_FEATURE_OVERTIME', env('ATTENDANCE_FEATURE_HR_CORE', false)),
         'special_working_days' => env('ATTENDANCE_FEATURE_SPECIAL_WORKING_DAYS', env('ATTENDANCE_FEATURE_HR_CORE', false)),
         'departments' => env('ATTENDANCE_FEATURE_DEPARTMENTS', env('ATTENDANCE_FEATURE_HR_CORE', false)),
     ],
@@ -108,7 +108,7 @@ return [
     */
     'default_shift' => [
         'start_time' => '09:00:00',
-        'end_time'   => '18:00:00',
+        'end_time' => '18:00:00',
         'late_grace_minutes' => 15,
         'week_off_day' => 'Friday', // Carbon day name, or null for none
     ],

@@ -19,6 +19,5 @@ class AttendanceDeviceSyncFailed
         public AttendanceDevice $device,
         public string $reason,
         public int $consecutiveFailures,
-    ) {
-    }
+    ) {}
 }

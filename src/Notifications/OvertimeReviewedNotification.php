@@ -15,9 +15,7 @@ class OvertimeReviewedNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public OvertimeRecord $record)
-    {
-    }
+    public function __construct(public OvertimeRecord $record) {}
 
     public function via(object $notifiable): array
     {

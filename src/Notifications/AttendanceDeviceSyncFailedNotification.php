@@ -15,8 +15,7 @@ class AttendanceDeviceSyncFailedNotification extends Notification
         public AttendanceDevice $device,
         public string $reason,
         public int $consecutiveFailures,
-    ) {
-    }
+    ) {}
 
     public function via(object $notifiable): array
     {

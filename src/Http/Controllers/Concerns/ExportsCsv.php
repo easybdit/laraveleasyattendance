@@ -2,6 +2,7 @@
 
 namespace Easybdit\LaravelEasyAttendance\Http\Controllers\Concerns;
 
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -12,7 +13,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 trait ExportsCsv
 {
-    protected function wantsCsv(\Illuminate\Http\Request $request): bool
+    protected function wantsCsv(Request $request): bool
     {
         return $request->query('format') === 'csv';
     }

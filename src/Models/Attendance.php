@@ -2,6 +2,7 @@
 
 namespace Easybdit\LaravelEasyAttendance\Models;
 
+use Carbon\Carbon;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -44,14 +45,14 @@ class Attendance extends Model
      * wins over a stray device punch instead of just sitting beside it.
      *
      * @param  Collection<int, Attendance>  $punches
-     * @return array{first_in: ?\Carbon\Carbon, last_out: ?\Carbon\Carbon}
+     * @return array{first_in: ?Carbon, last_out: ?Carbon}
      */
     public static function resolveDayWindow(Collection $punches): array
     {
-        $checkIns  = $punches->where('type', 'check_in');
+        $checkIns = $punches->where('type', 'check_in');
         $checkOuts = $punches->where('type', 'check_out');
 
-        $manualIn  = $checkIns->where('is_manual', true);
+        $manualIn = $checkIns->where('is_manual', true);
         $manualOut = $checkOuts->where('is_manual', true);
 
         $firstIn = $manualIn->isNotEmpty()

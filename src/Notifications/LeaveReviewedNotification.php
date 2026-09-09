@@ -23,9 +23,7 @@ class LeaveReviewedNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public Leave $leave)
-    {
-    }
+    public function __construct(public Leave $leave) {}
 
     public function via(object $notifiable): array
     {

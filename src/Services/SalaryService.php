@@ -18,9 +18,7 @@ use Easybdit\LaravelEasyAttendance\Models\SpecialWorkingDay;
  */
 class SalaryService
 {
-    public function __construct(private AttendanceSummaryService $summaries = new AttendanceSummaryService)
-    {
-    }
+    public function __construct(private AttendanceSummaryService $summaries = new AttendanceSummaryService) {}
 
     /**
      * Generate (or regenerate) one employee's slip for a month. Rebuilds
