@@ -131,8 +131,11 @@ class FilamentTest extends TestCase
         $reviewer = User::create(['name' => 'Reviewer', 'email' => 'reviewer2@example.com']);
         $this->actingAs($reviewer);
 
-        $this->assertNull(LeaveResource::getNavigationBadge());
-
+        // Deliberately not asserting the badge before this — calling
+        // getNavigationBadge() would cache today's (zero) count for 30s,
+        // and the whole point of the cache is that it doesn't get busted
+        // by a plain Leave::create() the way it does by the resource's
+        // own approve()/reject() action below.
         $leave = Leave::create([
             'employee_id' => $employee->id,
             'leave_type_id' => $leaveType->id,
