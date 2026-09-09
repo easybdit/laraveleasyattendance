@@ -5,9 +5,19 @@ namespace Easybdit\LaravelEasyAttendance\Tests;
 use Easybdit\LaravelEasyAttendance\LaravelEasyAttendanceServiceProvider;
 use Easybdit\LaravelEasyAttendance\Tests\Fixtures\TestPanelProvider;
 use Easybdit\LaravelEasyAttendance\Tests\Fixtures\User;
+use Filament\Actions\ActionsServiceProvider;
+use Filament\FilamentServiceProvider;
+use Filament\Forms\FormsServiceProvider;
+use Filament\Infolists\InfolistsServiceProvider;
+use Filament\Notifications\NotificationsServiceProvider;
 use Filament\PanelProvider;
+use Filament\Schemas\SchemasServiceProvider;
+use Filament\Support\SupportServiceProvider;
+use Filament\Tables\TablesServiceProvider;
+use Filament\Widgets\WidgetsServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
@@ -32,9 +42,27 @@ abstract class TestCase extends Orchestra
         // filament/filament is a suggested, not required, dependency —
         // only registered here (for FilamentTest) when it's actually
         // installed, same as a consuming app would only add it once
-        // they've composer required Filament themselves.
+        // they've composer required Filament themselves. Testbench
+        // doesn't run Laravel's package auto-discovery (no
+        // bootstrap/cache/packages.php gets built), so every one of
+        // Filament's sub-package providers — normally auto-discovered
+        // in a real app via each package's own composer.json — has to
+        // be listed by hand here too, not just the top-level one.
         if (class_exists(PanelProvider::class)) {
-            $providers[] = TestPanelProvider::class;
+            $providers = [
+                ...$providers,
+                SupportServiceProvider::class,
+                ActionsServiceProvider::class,
+                NotificationsServiceProvider::class,
+                SchemasServiceProvider::class,
+                InfolistsServiceProvider::class,
+                FormsServiceProvider::class,
+                TablesServiceProvider::class,
+                WidgetsServiceProvider::class,
+                FilamentServiceProvider::class,
+                LivewireServiceProvider::class,
+                TestPanelProvider::class,
+            ];
         }
 
         return $providers;
