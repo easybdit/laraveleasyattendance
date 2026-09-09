@@ -3,6 +3,7 @@
 namespace Easybdit\LaravelEasyAttendance\Filament\Resources;
 
 use BackedEnum;
+use Easybdit\LaravelEasyAttendance\Filament\Concerns\HasPendingBadge;
 use Easybdit\LaravelEasyAttendance\Filament\Concerns\RequiresFeature;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\LeaveResource\Pages\ManageLeaves;
 use Easybdit\LaravelEasyAttendance\Models\Leave;
@@ -23,6 +24,7 @@ use Illuminate\Support\Facades\Auth;
 
 class LeaveResource extends Resource
 {
+    use HasPendingBadge;
     use RequiresFeature;
 
     protected static ?string $model = Leave::class;
@@ -112,13 +114,19 @@ class LeaveResource extends Resource
                     ->color('success')
                     ->requiresConfirmation()
                     ->visible(fn (Leave $record) => $record->status === 'pending')
-                    ->action(fn (Leave $record) => $record->approve(Auth::id())),
+                    ->action(function (Leave $record) {
+                        $record->approve(Auth::id());
+                        static::forgetPendingBadgeCache();
+                    }),
                 Action::make('reject')
                     ->icon(Heroicon::OutlinedXMark)
                     ->color('danger')
                     ->requiresConfirmation()
                     ->visible(fn (Leave $record) => $record->status === 'pending')
-                    ->action(fn (Leave $record) => $record->reject(Auth::id())),
+                    ->action(function (Leave $record) {
+                        $record->reject(Auth::id());
+                        static::forgetPendingBadgeCache();
+                    }),
                 EditAction::make(),
                 DeleteAction::make(),
             ]);

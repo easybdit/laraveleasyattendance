@@ -16,6 +16,7 @@ use Easybdit\LaravelEasyAttendance\Filament\Resources\OvertimeRecordResource;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\SalarySlipResource;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\ShiftResource;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\SpecialWorkingDayResource;
+use Easybdit\LaravelEasyAttendance\Filament\Widgets\AttendanceOverviewWidget;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 
@@ -47,7 +48,10 @@ use Filament\Panel;
  * flag its table/routes already check (see Concerns\RequiresFeature) — so
  * a minimal check-in/out-only install just shows the Attendance resource,
  * and turning on ATTENDANCE_FEATURE_HR_CORE lights up the rest without any
- * extra config on the Filament side.
+ * extra config on the Filament side. Also ships a dashboard stats widget
+ * (Widgets\AttendanceOverviewWidget) and navigation badges on Leave/
+ * Overtime/Corrections (Concerns\HasPendingBadge) — both feature-gated
+ * and query-cached the same way, so they stay cheap on a busy panel.
  */
 class EasyAttendancePlugin implements Plugin
 {
@@ -63,7 +67,9 @@ class EasyAttendancePlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        $panel->resources($this->resources());
+        $panel
+            ->resources($this->resources())
+            ->widgets([AttendanceOverviewWidget::class]);
     }
 
     public function boot(Panel $panel): void

@@ -3,6 +3,7 @@
 namespace Easybdit\LaravelEasyAttendance\Filament\Resources;
 
 use BackedEnum;
+use Easybdit\LaravelEasyAttendance\Filament\Concerns\HasPendingBadge;
 use Easybdit\LaravelEasyAttendance\Filament\Concerns\RequiresFeature;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\OvertimeRecordResource\Pages\ManageOvertimeRecords;
 use Easybdit\LaravelEasyAttendance\Models\OvertimeRecord;
@@ -25,6 +26,7 @@ use Illuminate\Support\Facades\Auth;
 
 class OvertimeRecordResource extends Resource
 {
+    use HasPendingBadge;
     use RequiresFeature;
 
     protected static ?string $model = OvertimeRecord::class;
@@ -123,13 +125,19 @@ class OvertimeRecordResource extends Resource
                     ->color('success')
                     ->requiresConfirmation()
                     ->visible(fn (OvertimeRecord $record) => $record->status === 'pending')
-                    ->action(fn (OvertimeRecord $record) => $record->approve(Auth::id())),
+                    ->action(function (OvertimeRecord $record) {
+                        $record->approve(Auth::id());
+                        static::forgetPendingBadgeCache();
+                    }),
                 Action::make('reject')
                     ->icon(Heroicon::OutlinedXMark)
                     ->color('danger')
                     ->requiresConfirmation()
                     ->visible(fn (OvertimeRecord $record) => $record->status === 'pending')
-                    ->action(fn (OvertimeRecord $record) => $record->reject(Auth::id())),
+                    ->action(function (OvertimeRecord $record) {
+                        $record->reject(Auth::id());
+                        static::forgetPendingBadgeCache();
+                    }),
                 EditAction::make(),
                 DeleteAction::make(),
             ]);

@@ -4,6 +4,13 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- **Filament dashboard stats widget** (`Filament\Widgets\AttendanceOverviewWidget`) — today's present/late/absent breakdown, active employee count, and a combined pending-approvals count, all feature-gated and cached for 30s.
+- **Filament navigation badges** on Leave, Overtime, and AttendanceCorrection resources, showing their live pending count (`Filament\Concerns\HasPendingBadge`) — 30s cache, invalidated immediately by that resource's own Approve/Reject action.
+
+### Changed
+- New migration indexing `status` on `leaves`, `overtime_records`, and `attendance_corrections` — the new badges/widget run a bare `where('status', 'pending')->count()` on every cache miss, and none of these tables' existing composite indexes lead with `status`, so this was a full table scan waiting to happen on a large dataset.
+
 ## [2.1.0] - 2026-09-09
 
 ### Added

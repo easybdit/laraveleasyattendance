@@ -7,11 +7,18 @@ use Easybdit\LaravelEasyAttendance\Filament\Resources\AttendanceCorrectionResour
 use Easybdit\LaravelEasyAttendance\Filament\Resources\AttendanceCorrectionResource\Pages\ManageAttendanceCorrections;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\EmployeeResource;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\EmployeeResource\Pages\ManageEmployees;
+use Easybdit\LaravelEasyAttendance\Filament\Resources\LeaveResource;
+use Easybdit\LaravelEasyAttendance\Filament\Resources\LeaveResource\Pages\ManageLeaves;
+use Easybdit\LaravelEasyAttendance\Filament\Widgets\AttendanceOverviewWidget;
 use Easybdit\LaravelEasyAttendance\Models\AttendanceCorrection;
+use Easybdit\LaravelEasyAttendance\Models\Employee;
+use Easybdit\LaravelEasyAttendance\Models\Leave;
+use Easybdit\LaravelEasyAttendance\Models\LeaveType;
 use Easybdit\LaravelEasyAttendance\Tests\Fixtures\User;
 use Easybdit\LaravelEasyAttendance\Tests\TestCase;
 use Filament\Facades\Filament;
 use Filament\Panel;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
 
 /**
@@ -34,6 +41,11 @@ class FilamentTest extends TestCase
         // is only granted in a 'local' environment — see
         // Filament\Http\Middleware\Authenticate.
         config(['app.env' => 'local']);
+
+        // Badge/widget counts are cached for 30s (HasPendingBadge,
+        // AttendanceOverviewWidget) — a fresh cache per test keeps one
+        // test's counts from leaking into the next.
+        Cache::flush();
     }
 
     public function test_plugin_registers_every_resource_on_the_panel(): void
@@ -106,5 +118,47 @@ class FilamentTest extends TestCase
             'subject_id' => $subject->id,
             'type' => 'check_in',
         ]);
+    }
+
+    public function test_navigation_badge_reflects_pending_count_and_updates_after_approval(): void
+    {
+        $employee = Employee::create([
+            'employee_code' => 'E-200',
+            'name' => 'Badge Test Employee',
+            'basic_salary' => 1000,
+        ]);
+        $leaveType = LeaveType::create(['name' => 'Casual']);
+        $reviewer = User::create(['name' => 'Reviewer', 'email' => 'reviewer2@example.com']);
+        $this->actingAs($reviewer);
+
+        $this->assertNull(LeaveResource::getNavigationBadge());
+
+        $leave = Leave::create([
+            'employee_id' => $employee->id,
+            'leave_type_id' => $leaveType->id,
+            'start_date' => '2026-02-01',
+            'end_date' => '2026-02-02',
+            'reason' => 'Personal',
+            'status' => 'pending',
+        ]);
+
+        $this->assertSame('1', LeaveResource::getNavigationBadge());
+
+        Livewire::test(ManageLeaves::class)
+            ->callTableAction('approve', $leave);
+
+        // forgetPendingBadgeCache() runs inside the approve action itself,
+        // so the badge is fresh immediately — no need to wait out the 30s
+        // cache window.
+        $this->assertNull(LeaveResource::getNavigationBadge());
+    }
+
+    public function test_dashboard_widget_renders_for_an_authenticated_user(): void
+    {
+        $this->actingAs(User::create(['name' => 'Admin', 'email' => 'widget-admin@example.com']));
+
+        Livewire::test(AttendanceOverviewWidget::class)
+            ->assertOk()
+            ->assertSee('Pending approvals');
     }
 }

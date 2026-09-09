@@ -3,6 +3,7 @@
 namespace Easybdit\LaravelEasyAttendance\Filament\Resources;
 
 use BackedEnum;
+use Easybdit\LaravelEasyAttendance\Filament\Concerns\HasPendingBadge;
 use Easybdit\LaravelEasyAttendance\Filament\Concerns\HasSubjectPicker;
 use Easybdit\LaravelEasyAttendance\Filament\Concerns\RequiresFeature;
 use Easybdit\LaravelEasyAttendance\Filament\Resources\AttendanceCorrectionResource\Pages\ManageAttendanceCorrections;
@@ -25,6 +26,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AttendanceCorrectionResource extends Resource
 {
+    use HasPendingBadge;
     use HasSubjectPicker;
     use RequiresFeature;
 
@@ -119,13 +121,19 @@ class AttendanceCorrectionResource extends Resource
                     ->color('success')
                     ->requiresConfirmation()
                     ->visible(fn (AttendanceCorrection $record) => $record->status === 'pending')
-                    ->action(fn (AttendanceCorrection $record) => $record->approve(Auth::id())),
+                    ->action(function (AttendanceCorrection $record) {
+                        $record->approve(Auth::id());
+                        static::forgetPendingBadgeCache();
+                    }),
                 Action::make('reject')
                     ->icon(Heroicon::OutlinedXMark)
                     ->color('danger')
                     ->requiresConfirmation()
                     ->visible(fn (AttendanceCorrection $record) => $record->status === 'pending')
-                    ->action(fn (AttendanceCorrection $record) => $record->reject(Auth::id())),
+                    ->action(function (AttendanceCorrection $record) {
+                        $record->reject(Auth::id());
+                        static::forgetPendingBadgeCache();
+                    }),
                 EditAction::make(),
                 DeleteAction::make(),
             ]);
