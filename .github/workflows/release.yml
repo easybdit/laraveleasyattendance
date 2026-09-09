@@ -1,0 +1,43 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  github-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract changelog section for this tag
+        id: changelog
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          notes_file="$(mktemp)"
+          awk -v ver="$version" '
+            BEGIN { found=0 }
+            /^## \[/ {
+              if (found) exit
+              if (index($0, "[" ver "]") > 0) { found=1; next }
+            }
+            found { print }
+          ' CHANGELOG.md > "$notes_file"
+          if [ ! -s "$notes_file" ]; then
+            echo "See CHANGELOG.md for details." > "$notes_file"
+          fi
+          {
+            echo "notes_file=$notes_file"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: ${{ steps.changelog.outputs.notes_file }}
+          generate_release_notes: true
