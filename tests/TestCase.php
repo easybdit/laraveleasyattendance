@@ -2,6 +2,8 @@
 
 namespace Easybdit\LaravelEasyAttendance\Tests;
 
+use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
+use BladeUI\Icons\BladeIconsServiceProvider;
 use Easybdit\LaravelEasyAttendance\LaravelEasyAttendanceServiceProvider;
 use Easybdit\LaravelEasyAttendance\Tests\Fixtures\TestPanelProvider;
 use Easybdit\LaravelEasyAttendance\Tests\Fixtures\User;
@@ -11,14 +13,17 @@ use Filament\Forms\FormsServiceProvider;
 use Filament\Infolists\InfolistsServiceProvider;
 use Filament\Notifications\NotificationsServiceProvider;
 use Filament\PanelProvider;
+use Filament\QueryBuilder\QueryBuilderServiceProvider;
 use Filament\Schemas\SchemasServiceProvider;
 use Filament\Support\SupportServiceProvider;
 use Filament\Tables\TablesServiceProvider;
 use Filament\Widgets\WidgetsServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use Kirschbaum\PowerJoins\PowerJoinsServiceProvider;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -51,6 +56,10 @@ abstract class TestCase extends Orchestra
         if (class_exists(PanelProvider::class)) {
             $providers = [
                 ...$providers,
+                BladeIconsServiceProvider::class,
+                BladeHeroiconsServiceProvider::class,
+                BladeCaptureDirectiveServiceProvider::class,
+                PowerJoinsServiceProvider::class,
                 SupportServiceProvider::class,
                 ActionsServiceProvider::class,
                 NotificationsServiceProvider::class,
@@ -58,6 +67,7 @@ abstract class TestCase extends Orchestra
                 InfolistsServiceProvider::class,
                 FormsServiceProvider::class,
                 TablesServiceProvider::class,
+                QueryBuilderServiceProvider::class,
                 WidgetsServiceProvider::class,
                 FilamentServiceProvider::class,
                 LivewireServiceProvider::class,
