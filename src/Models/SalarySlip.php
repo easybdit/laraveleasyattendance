@@ -4,7 +4,31 @@ namespace Easybdit\LaravelEasyAttendance\Models;
 
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $employee_id
+ * @property int $year
+ * @property int $month
+ * @property string $basic_salary
+ * @property ?array<string, float|int> $allowances
+ * @property ?int $present_days
+ * @property ?int $absent_days
+ * @property ?int $late_days
+ * @property ?int $leave_days
+ * @property string $overtime_hours
+ * @property string $overtime_amount
+ * @property string $special_pay_amount
+ * @property string $deduction_amount
+ * @property string $net_salary
+ * @property ?Carbon $generated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read float $gross_salary
+ * @property-read Employee $employee
+ */
 class SalarySlip extends Model
 {
     use HasPackageTable;
@@ -32,7 +56,7 @@ class SalarySlip extends Model
         'generated_at' => 'datetime',
     ];
 
-    public function employee()
+    public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
     }

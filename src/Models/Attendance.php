@@ -7,6 +7,22 @@ use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
+/**
+ * @property int $id
+ * @property string $subject_type
+ * @property int|string $subject_id
+ * @property \Illuminate\Support\Carbon $time
+ * @property string $type
+ * @property ?string $source
+ * @property bool $is_manual
+ * @property ?array<string, mixed> $meta
+ * @property ?int $device_id
+ * @property ?string $device_user_id
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property-read Model $subject
+ * @property-read ?AttendanceDevice $device
+ */
 class Attendance extends Model
 {
     use HasPackageTable;

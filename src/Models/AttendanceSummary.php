@@ -4,12 +4,37 @@ namespace Easybdit\LaravelEasyAttendance\Models;
 
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * One pre-computed daily status row per employee — present/late/absent/
  * leave/holiday/day_off. Built by AttendanceSummaryService from the raw
  * Attendance punch log plus Shift/Leave/Holiday; rebuild after any sync
  * or manual punch that touches the date, and during salary generation.
+ *
+ * @property int $id
+ * @property int $employee_id
+ * @property Carbon $date
+ * @property ?int $shift_id
+ * @property string $status
+ * @property ?Carbon $first_in
+ * @property ?Carbon $last_out
+ * @property ?int $punch_count
+ * @property ?int $late_minutes
+ * @property ?int $ot_minutes
+ * @property bool $is_holiday
+ * @property bool $is_day_off
+ * @property bool $is_on_leave
+ * @property ?string $holiday_name
+ * @property ?string $shift_start
+ * @property ?string $shift_end
+ * @property ?string $shift_source
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read ?float $work_hours
+ * @property-read Employee $employee
+ * @property-read ?Shift $shift
  */
 class AttendanceSummary extends Model
 {
@@ -37,7 +62,7 @@ class AttendanceSummary extends Model
         'is_on_leave' => 'boolean',
     ];
 
-    public function employee()
+    public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
     }

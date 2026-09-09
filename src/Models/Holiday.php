@@ -6,6 +6,14 @@ use Carbon\Carbon;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property \Illuminate\Support\Carbon $date
+ * @property bool $is_recurring_yearly
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ */
 class Holiday extends Model
 {
     use HasPackageTable;

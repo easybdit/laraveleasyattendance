@@ -6,7 +6,25 @@ use Easybdit\LaravelEasyAttendance\Events\AttendanceCorrectionReviewed;
 use Easybdit\LaravelEasyAttendance\Events\AttendanceRecorded;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $subject_type
+ * @property int|string $subject_id
+ * @property ?int $submitted_by
+ * @property Carbon $date
+ * @property ?string $requested_in
+ * @property ?string $requested_out
+ * @property string $reason
+ * @property string $status
+ * @property ?int $reviewed_by
+ * @property ?Carbon $reviewed_at
+ * @property ?string $review_note
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Model $subject
+ */
 class AttendanceCorrection extends Model
 {
     use HasPackageTable;

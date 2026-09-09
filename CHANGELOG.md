@@ -4,6 +4,12 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+- **Every model now has a full `@property`/`@property-read` docblock** — every column, cast type, and relation is now typed for IDE autocomplete (PhpStorm, Intelephense) in consuming apps, not just for PHPStan. Shrank `phpstan-baseline.neon` from 154 entries to 16 in the process — everything resolvable without weakening a real type got fixed outright:
+  - `Leave::daysCount()` now explicitly casts `diffInDays()`'s result to `int` (it's typed `float` upstream for sub-day precision that can't occur between two date-only casts, so the method's own `int` return type was already implicitly correct — just not statically provable before).
+  - Added explicit `BelongsTo` return types to four relation methods (`AttendanceSummary::employee()`, `SalarySlip::employee()`, `Designation::department()`, `EmployeeShift::shift()`) — Larastan's eager-load relation-name validation (`->with('employee')`) needs a typed return to recognize a method as a real relation at all.
+  - The remaining 16 baselined findings are all one architectural pattern: `HasAttendance`/`HasPackageTable` methods called through a runtime-configured `attendance.subject_model` that could be any consuming app's model — genuinely unknowable to static analysis, not a bug (see the docblock on `AttendanceController`).
+
 ## [2.3.0] - 2026-09-09
 
 ### Added

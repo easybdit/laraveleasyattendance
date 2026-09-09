@@ -6,6 +6,7 @@ use Easybdit\LaravelEasyAttendance\Events\LeaveRequested;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Easybdit\LaravelEasyAttendance\Traits\HasAttendance;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -14,6 +15,30 @@ use Illuminate\Support\Collection;
  * attendance.subject_model at their own User/Employee class. Optional:
  * only migrated when features.employees is on. To actually use it as the
  * attendance subject, set ATTENDANCE_SUBJECT_MODEL to this class.
+ *
+ * @property int $id
+ * @property string $employee_code
+ * @property string $name
+ * @property ?string $email
+ * @property ?string $phone
+ * @property ?string $designation
+ * @property ?int $department_id
+ * @property ?int $designation_id
+ * @property ?string $device_user_id
+ * @property string $basic_salary
+ * @property ?array<string, float|int> $allowances
+ * @property ?Carbon $joined_at
+ * @property string $status
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, EmployeeShift> $shiftAssignments
+ * @property-read ?Department $department
+ * @property-read ?Designation $designationRecord
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Leave> $leaves
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, SalarySlip> $salarySlips
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, AttendanceSummary> $summaries
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, OvertimeRecord> $overtimeRecords
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, SpecialWorkingDay> $specialWorkingDays
  */
 class Employee extends Model
 {
@@ -92,8 +117,7 @@ class Employee extends Model
 
     /**
      * Allowed/used/remaining for every leave type, for one calendar year.
-     *
-     * @return Collection<int, array{leave_type_id: int, leave_type: string, allowed: ?int, used: int, remaining: ?int}>
+     * Each element: array{leave_type_id: int, leave_type: string, allowed: ?int, used: int, remaining: ?int}
      */
     public function leaveBalances(?int $year = null): Collection
     {

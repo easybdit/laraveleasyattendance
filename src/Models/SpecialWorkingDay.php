@@ -5,12 +5,24 @@ namespace Easybdit\LaravelEasyAttendance\Models;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Easybdit\LaravelEasyAttendance\Support\ShiftResolver;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * Marks a date an employee was specifically asked to work despite it
  * normally being off (their shift's off_day, or a company Holiday) — so
  * SalaryService can pay extra for it instead of that day just quietly
  * counting as an ordinary "present".
+ *
+ * @property int $id
+ * @property int $employee_id
+ * @property Carbon $date
+ * @property string $type
+ * @property bool $is_payable
+ * @property ?string $payment_amount
+ * @property ?string $note
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Employee $employee
  */
 class SpecialWorkingDay extends Model
 {

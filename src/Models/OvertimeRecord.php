@@ -5,7 +5,26 @@ namespace Easybdit\LaravelEasyAttendance\Models;
 use Easybdit\LaravelEasyAttendance\Events\OvertimeReviewed;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $employee_id
+ * @property Carbon $date
+ * @property ?string $shift_end_time
+ * @property ?string $actual_out_time
+ * @property string $ot_hours
+ * @property string $ot_rate
+ * @property string $ot_amount
+ * @property ?string $source
+ * @property string $status
+ * @property ?int $approved_by
+ * @property ?Carbon $approved_at
+ * @property ?string $note
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Employee $employee
+ */
 class OvertimeRecord extends Model
 {
     use HasPackageTable;

@@ -5,7 +5,24 @@ namespace Easybdit\LaravelEasyAttendance\Models;
 use Easybdit\LaravelEasyAttendance\Events\LeaveReviewed;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $employee_id
+ * @property int $leave_type_id
+ * @property Carbon $start_date
+ * @property Carbon $end_date
+ * @property string $reason
+ * @property string $status
+ * @property ?int $reviewed_by
+ * @property ?Carbon $reviewed_at
+ * @property ?string $review_note
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Employee $employee
+ * @property-read LeaveType $leaveType
+ */
 class Leave extends Model
 {
     use HasPackageTable;
@@ -42,7 +59,11 @@ class Leave extends Model
      */
     public function daysCount(): int
     {
-        return $this->start_date->diffInDays($this->end_date) + 1;
+        // Carbon's diffInDays() is typed to return float (it supports
+        // sub-day precision on datetimes); start_date/end_date are
+        // date-only casts, so the result is always a whole number here —
+        // the cast just makes that already-true fact match the return type.
+        return (int) $this->start_date->diffInDays($this->end_date) + 1;
     }
 
     /**

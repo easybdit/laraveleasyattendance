@@ -3,8 +3,21 @@
 namespace Easybdit\LaravelEasyAttendance\Models;
 
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $start_time
+ * @property string $end_time
+ * @property ?int $late_grace_minutes
+ * @property ?array<int, string> $off_days
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Collection<int, EmployeeShift> $assignments
+ */
 class Shift extends Model
 {
     use HasPackageTable;

@@ -4,11 +4,23 @@ namespace Easybdit\LaravelEasyAttendance\Models;
 
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * One row of an employee's roster/schedule — "this employee works this
  * shift from this date [to this date, or still ongoing]". Multiple rows
  * let an employee's schedule change over time without losing history.
+ *
+ * @property int $id
+ * @property int $employee_id
+ * @property int $shift_id
+ * @property Carbon $start_date
+ * @property ?Carbon $end_date
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Employee $employee
+ * @property-read Shift $shift
  */
 class EmployeeShift extends Model
 {
@@ -26,12 +38,12 @@ class EmployeeShift extends Model
         'end_date' => 'date',
     ];
 
-    public function employee()
+    public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
     }
 
-    public function shift()
+    public function shift(): BelongsTo
     {
         return $this->belongsTo(Shift::class);
     }
