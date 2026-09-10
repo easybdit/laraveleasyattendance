@@ -6,6 +6,8 @@ use Easybdit\LaravelEasyAttendance\Events\LeaveRequested;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Easybdit\LaravelEasyAttendance\Traits\HasAttendance;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -61,42 +63,42 @@ class Employee extends Model
         'joined_at' => 'date',
     ];
 
-    public function shiftAssignments()
+    public function shiftAssignments(): HasMany
     {
         return $this->hasMany(EmployeeShift::class);
     }
 
-    public function department()
+    public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
     }
 
-    public function designationRecord()
+    public function designationRecord(): BelongsTo
     {
         return $this->belongsTo(Designation::class, 'designation_id');
     }
 
-    public function leaves()
+    public function leaves(): HasMany
     {
         return $this->hasMany(Leave::class);
     }
 
-    public function salarySlips()
+    public function salarySlips(): HasMany
     {
         return $this->hasMany(SalarySlip::class);
     }
 
-    public function summaries()
+    public function summaries(): HasMany
     {
         return $this->hasMany(AttendanceSummary::class);
     }
 
-    public function overtimeRecords()
+    public function overtimeRecords(): HasMany
     {
         return $this->hasMany(OvertimeRecord::class);
     }
 
-    public function specialWorkingDays()
+    public function specialWorkingDays(): HasMany
     {
         return $this->hasMany(SpecialWorkingDay::class);
     }

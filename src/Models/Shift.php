@@ -5,6 +5,7 @@ namespace Easybdit\LaravelEasyAttendance\Models;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -33,7 +34,7 @@ class Shift extends Model
         'off_days' => 'array',
     ];
 
-    public function assignments()
+    public function assignments(): HasMany
     {
         return $this->hasMany(EmployeeShift::class);
     }

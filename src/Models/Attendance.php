@@ -5,6 +5,8 @@ namespace Easybdit\LaravelEasyAttendance\Models;
 use Carbon\Carbon;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Collection;
 
 /**
@@ -44,12 +46,12 @@ class Attendance extends Model
         'meta' => 'array',
     ];
 
-    public function subject()
+    public function subject(): MorphTo
     {
         return $this->morphTo();
     }
 
-    public function device()
+    public function device(): BelongsTo
     {
         return $this->belongsTo(AttendanceDevice::class, 'device_id');
     }

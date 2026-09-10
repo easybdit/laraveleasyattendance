@@ -5,6 +5,7 @@ namespace Easybdit\LaravelEasyAttendance\Models;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -46,7 +47,7 @@ class AttendanceDevice extends Model
 
     protected $appends = ['is_online', 'connection_mode'];
 
-    public function attendances()
+    public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class, 'device_id');
     }

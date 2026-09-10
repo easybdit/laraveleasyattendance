@@ -67,7 +67,7 @@ class AttendanceSummary extends Model
         return $this->belongsTo(Employee::class);
     }
 
-    public function shift()
+    public function shift(): BelongsTo
     {
         return $this->belongsTo(Shift::class);
     }

@@ -37,6 +37,48 @@ parameters:
 			path: src/Http/Controllers/AttendancePrintController.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/AttendanceReportController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$first_in\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/AttendanceReportController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$last_out\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/AttendanceReportController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$late_minutes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/AttendanceReportController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ot_minutes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/AttendanceReportController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/AttendanceReportController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: src/Http/Controllers/AttendanceReportController.php
+
+		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:attendances\(\)\.$#'
 			identifier: method.notFound
 			count: 2
@@ -55,6 +97,12 @@ parameters:
 			path: src/Models/Employee.php
 
 		-
+			message: '#^Method Easybdit\\LaravelEasyAttendance\\Models\\Employee\:\:requestLeave\(\) should return Easybdit\\LaravelEasyAttendance\\Models\\Leave but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Models/Employee.php
+
+		-
 			message: '#^Parameter \#1 \$attendance of class Easybdit\\LaravelEasyAttendance\\Events\\AttendanceRecorded constructor expects Easybdit\\LaravelEasyAttendance\\Models\\Attendance, Illuminate\\Database\\Eloquent\\Model given\.$#'
 			identifier: argument.type
 			count: 1
@@ -67,10 +115,22 @@ parameters:
 			path: src/Models/Employee.php
 
 		-
+			message: '#^Parameter \#1 \$leave of class Easybdit\\LaravelEasyAttendance\\Events\\LeaveRequested constructor expects Easybdit\\LaravelEasyAttendance\\Models\\Leave, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Models/Employee.php
+
+		-
 			message: '#^Parameter \#1 \$punches of static method Easybdit\\LaravelEasyAttendance\\Models\\Attendance\:\:resolveDayWindow\(\) expects Illuminate\\Support\\Collection\<int, Easybdit\\LaravelEasyAttendance\\Models\\Attendance\>, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Models/Employee.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:sum\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: int\)\|string\|null, Closure\(Easybdit\\LaravelEasyAttendance\\Models\\Leave\)\: int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Models/LeaveType.php
 
 		-
 			message: '#^Parameter \#1 \$punches of static method Easybdit\\LaravelEasyAttendance\\Models\\Attendance\:\:resolveDayWindow\(\) expects Illuminate\\Support\\Collection\<int, Easybdit\\LaravelEasyAttendance\\Models\\Attendance\>, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\> given\.$#'

@@ -5,6 +5,7 @@ namespace Easybdit\LaravelEasyAttendance\Models;
 use Easybdit\LaravelEasyAttendance\Events\LeaveReviewed;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
@@ -43,12 +44,12 @@ class Leave extends Model
         'reviewed_at' => 'datetime',
     ];
 
-    public function employee()
+    public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
     }
 
-    public function leaveType()
+    public function leaveType(): BelongsTo
     {
         return $this->belongsTo(LeaveType::class);
     }

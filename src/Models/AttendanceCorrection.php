@@ -6,6 +6,7 @@ use Easybdit\LaravelEasyAttendance\Events\AttendanceCorrectionReviewed;
 use Easybdit\LaravelEasyAttendance\Events\AttendanceRecorded;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
 /**
@@ -45,7 +46,7 @@ class AttendanceCorrection extends Model
         'reviewed_at' => 'datetime',
     ];
 
-    public function subject()
+    public function subject(): MorphTo
     {
         return $this->morphTo();
     }

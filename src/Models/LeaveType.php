@@ -5,6 +5,7 @@ namespace Easybdit\LaravelEasyAttendance\Models;
 use Easybdit\LaravelEasyAttendance\Models\Concerns\HasPackageTable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -26,7 +27,7 @@ class LeaveType extends Model
 
     protected $fillable = ['name', 'days_allowed_per_year'];
 
-    public function leaves()
+    public function leaves(): HasMany
     {
         return $this->hasMany(Leave::class);
     }
